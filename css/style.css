@@ -64,10 +64,95 @@ div#load_screen > div#loading {
   text-align: center;
 }
 
-.center {
+.hero_section {
+  border-radius: 5px;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(
+    135deg,
+    #003c71 0%,
+    #004e92 25%,
+    #0072b1 50%,
+    #0093d0 75%,
+    #00bfff 100%
+  );
+  transform: scale(0.9);
+  -moz-transition: all 0.2s ease-in;
+  -o-transition: all 0.2s ease-in;
+  -webkit-transition: all 0.2s ease-in;
+  transition: all 0.2s ease-in;
+}
+
+.hero_section:hover {
+  border-radius: 20px;
+}
+
+.marquee-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  overflow: hidden;
+  background: transparent;
+  color: #fff;
+  font-size: 24px;
+  text-align: center;
+  z-index: 10;
+}
+
+.marquee {
+  display: inline-block;
+  white-space: nowrap;
+  padding-left: 100%;
+  animation: marquee 40s linear infinite;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 10em;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.branding {
+  color: white;
+  font-weight: 700;
+  font-size: 1.2em;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   position: absolute;
   text-align: center;
+}
+
+.btn {
+  padding: 10px 20px;
+  background-color: transparent;
+  color: white;
+  border: 2px solid #fff;
+  font-size: 1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+  -moz-transition: all 0.3s ease-in;
+  -o-transition: all 0.3s ease-in;
+  -webkit-transition: all 0.3s ease-in;
+  transition: all 0.3s ease-in;
+}
+
+.btn:hover {
+  background-color: rgba(255, 255, 255, 1);
+  color: #0074b3;
+}
+
+@media screen and (max-width: 1000px) {
+  .btn {
+    padding: 5px 10px;
+    font-size: 0.8em;
+  }
 }

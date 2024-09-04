@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="author" content="Prabhjot Singh" />
+    <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <title>Activity 1</title>
+  </head>
+  <body>
+    <div class="page-container">
+      <h1>Goal Tracking and Journal Website</h1>
+      <p id="avgsleep"></p>
+      <p id="avgmood"></p>
+      <hr />
+      <h2>Welcome back Prabhjot Singh!</h2>
+      <p id="datetime"></p>
+      <form
+        id="entryForm"
+        action="/submit"
+        method="post"
+        enctype="multipart/form-data"
+      >
+        <!-- Image -->
+        <label for="image">Upload an image for the day:</label>
+        <input type="file" id="image" name="image" accept="image/*" required />
+        <br /><br />
+        <!-- Quote -->
+        <p>Inspirational Quote:</p>
+        <p>"You only fail when you give you up" – Minha Raza</p>
+        <br /><br />
+        <!-- Entry -->
+        <label for="journal">Journal Entry:</label>
+        <br />
+        <textarea
+          id="journal"
+          name="journal"
+          rows="6"
+          placeholder="Write your thoughts here..."
+          required
+        ></textarea>
+        <br /><br />
+        <!-- Sleep -->
+        <label for="sleep">Hours of Sleep:</label>
+        <input
+          type="number"
+          id="sleep"
+          name="sleep"
+          min="0"
+          max="24"
+          step="0.1"
+          required
+        />
+        <br /><br />
+        <!-- Mood Checkboxes -->
+        <label>How did you feel today?:</label>
+        <div class="checkbox-group">
+          <label
+            ><input
+              checked="checked"
+              type="radio"
+              name="mood"
+              value="energetic"
+            />
+            Energetic</label
+          >
+          <label
+            ><input type="radio" name="mood" value="anxious" /> Anxious</label
+          >
+          <label
+            ><input type="radio" name="mood" value="motivated" />
+            Motivated</label
+          >
+          <label
+            ><input type="radio" name="mood" value="relaxed" /> Relaxed</label
+          >
+          <label><input type="radio" name="mood" value="tired" /> Tired</label>
+        </div>
+        <br /><br />
+        <button type="submit">Submit</button>
+      </form>
+      <br />
+      <p>Mood circle represents how you feel:</p>
+      <svg id="moodCircle" width="100" height="100">
+        <circle cx="50" cy="50" r="40" fill="black" />
+      </svg>
+      <hr />
+    </div>
+
+    <script src="js/main.js"></script>
+  </body>
+</html>

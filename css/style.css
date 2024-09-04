@@ -70,11 +70,11 @@ div#load_screen > div#loading {
   width: 100%;
   background: linear-gradient(
     135deg,
-    #003c71 0%,
-    #004e92 25%,
-    #0072b1 50%,
-    #0093d0 75%,
-    #00bfff 100%
+    #000000 0%,
+    #535454 25%,
+    #7b7c7d 50%,
+    #5a5b5c 75%,
+    #494a4b 100%
   );
   transform: scale(0.9);
   -moz-transition: all 0.2s ease-in;
@@ -85,38 +85,6 @@ div#load_screen > div#loading {
 
 .hero_section:hover {
   border-radius: 20px;
-}
-
-.marquee-container {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  overflow: hidden;
-  background: transparent;
-  color: #fff;
-  font-size: 24px;
-  text-align: center;
-  z-index: 10;
-}
-
-.marquee {
-  display: inline-block;
-  white-space: nowrap;
-  padding-left: 100%;
-  animation: marquee 40s linear infinite;
-  font-weight: bold;
-  text-transform: uppercase;
-  font-size: 10em;
-}
-
-@keyframes marquee {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-100%);
-  }
 }
 
 .branding {
@@ -147,12 +115,45 @@ div#load_screen > div#loading {
 
 .btn:hover {
   background-color: rgba(255, 255, 255, 1);
-  color: #0074b3;
+  color: #000;
 }
 
 @media screen and (max-width: 1000px) {
   .btn {
     padding: 5px 10px;
     font-size: 0.8em;
+  }
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  text-align: center;
+}
+
+.link {
+  text-decoration: none;
+  font-size: 4rem;
+  color: #fff;
+  margin: 20px 0;
+  transition: color 0.3s ease;
+}
+
+.link:hover {
+  color: #595959;
+}
+
+@media (max-width: 768px) {
+  .link {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .link {
+    font-size: 2rem;
   }
 }

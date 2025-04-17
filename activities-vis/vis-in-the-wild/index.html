@@ -1,1 +1,210 @@
-start
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Landmines.education Visualization Analysis</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        font-family: "Segoe UI", sans-serif;
+        scroll-behavior: smooth;
+        overflow-y: auto;
+        scroll-snap-type: y mandatory;
+      }
+
+      section {
+        height: 100vh;
+        display: flex;
+        scroll-snap-align: start;
+      }
+
+      /* Hero */
+      .hero {
+        background: url("landing.jpg") no-repeat center center/cover;
+        position: relative;
+        justify-content: center;
+        align-items: center;
+        background-attachment: fixed;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 1;
+      }
+
+      .hero h1 {
+        color: white;
+        font-size: 3rem;
+        z-index: 2;
+        text-align: center;
+        padding: 0 20px;
+      }
+
+      /* Shared split screen layout */
+      .left,
+      .right {
+        width: 50%;
+        padding: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .left {
+        flex-direction: column;
+        background-color: #f4f4f4;
+        border-right: 2px solid #ddd;
+      }
+
+      .left h2 {
+        font-size: 1.8rem;
+        margin-bottom: 20px;
+      }
+
+      .left textarea {
+        width: 100%;
+        height: 200px;
+        font-size: 1rem;
+        padding: 10px;
+        border: 1px solid #ccc;
+        resize: none;
+      }
+
+      .right img {
+        /* max-width: 90%;
+        max-height: 90%; */
+        height: 100%;
+        width: 100%;
+        border-radius: 12px;
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+        object-fit: cover;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="overlay"></div>
+      <h1>landmines.education visualization analysis</h1>
+    </section>
+
+    <!-- Q&A Sections -->
+    <section class="section" data-image="1.png">
+      <div class="left">
+        <h2>What is the purpose of this visualization?</h2>
+        <p>
+          The purpose of this visualization is to highlight landmine clean up
+          efforts in Vietnam. This is done by displaying how much area is
+          contaminated and how much has been cleared. It also displays the
+          amount of explosives handled. These cleanup efforts seem to be headed
+          by the government and external organizations.
+        </p>
+      </div>
+      <div class="right">
+        <img src="1.png" alt="Purpose Image" />
+      </div>
+    </section>
+
+    <section class="section" data-image="2.png">
+      <div class="left">
+        <h2>What is the data? How was the data captured or collected?</h2>
+        <p>
+          Contaminated areas are found using technical surveys. Then further
+          data is collected during mine removal work. When teams clear
+          landmines, they record where it happened, how big the area was, and
+          how many explosives they found. This information is saved in a
+          database managed by Quang Tri province and then shown on the map.
+        </p>
+      </div>
+      <div class="right">
+        <img src="2.png" alt="Data Image" />
+      </div>
+    </section>
+
+    <section class="section" data-image="3.png">
+      <div class="left">
+        <h2>Who are the users this visualization was made for?</h2>
+        <p>
+          I feel that this visualization is made for everyone. Even as we
+          discuss it right we have brought awareness to a topic that we probably
+          didn't even know existed. This further increases the reach of the
+          issue and hopefully earns the organization funds, especially that the
+          visualization serves as direct proof of efforts. The visualization is
+          even accompanied by educational material like different types of
+          landmines.
+        </p>
+      </div>
+      <div class="right">
+        <img src="3.png" alt="Audience Image" />
+      </div>
+    </section>
+
+    <section class="section" data-image="4.png">
+      <div class="left">
+        <h2>
+          Questions + Insights: What can people ask and answer using this tool?
+        </h2>
+        <p>
+          By looking at the map and the data shown, users can find answers by
+          exploring different locations and seeing how many explosives were
+          found and removed. This helps people understand where the biggest
+          risks are and how much work has been done to make areas safe again.
+          Donators may even be able to see how their money is being used.
+        </p>
+      </div>
+      <div class="right">
+        <img src="4.png" alt="Insights Image" />
+      </div>
+    </section>
+
+    <section class="section" data-image="5.png">
+      <div class="left">
+        <h2>Comment on the visual and interaction design choices</h2>
+        <p>
+          This visualization is stunning and informative at the same time. It
+          follows an amazing design scheme and has modern components without
+          hurting the usability. The map is very interactive with filtering and
+          a timeline feature. It also has all the other features that one
+          expects from a interactive map.
+        </p>
+      </div>
+      <div class="right">
+        <img src="5.png" alt="Design Image" />
+      </div>
+    </section>
+
+    <section class="section" data-image="6.png">
+      <div class="left">
+        <h2>What are the limitations of this design?</h2>
+        <p>I don't see any to be honest. Would love to hear your thoughts!</p>
+      </div>
+      <div class="right">
+        <img src="6.png" alt="Limitations Image" />
+      </div>
+    </section>
+
+    <script>
+      const sections = document.querySelectorAll(".section");
+      function updateImages() {
+        sections.forEach((section) => {
+          const img = section.querySelector("img");
+          const imageUrl = section.getAttribute("data-image");
+          if (img && imageUrl) {
+            img.src = imageUrl;
+          }
+        });
+      }
+      window.addEventListener("DOMContentLoaded", updateImages);
+    </script>
+  </body>
+</html>

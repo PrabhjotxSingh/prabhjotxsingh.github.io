@@ -1,0 +1,1915 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Priority One — Triage the chaos.</title>
+    <style>
+      :root {
+        --hudH: 112px;
+        --rightW: 340px;
+        --logH: 160px;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #0f1115;
+        color: #e8eef7;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+          Arial;
+      }
+
+      /* HUD */
+      #hud {
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: auto;
+        min-height: 64px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        padding: 8px 12px;
+        background: rgba(12, 14, 20, 0.96);
+        border-bottom: 1px solid #293041;
+      }
+      #brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      #brand h1 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 0.4px;
+      }
+
+      /* Controls */
+      #controls {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .btn {
+        background: #1a2438;
+        color: #d8e6ff;
+        border: 1px solid #314162;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .btn:hover {
+        filter: brightness(1.1);
+      }
+      .btn.ghost {
+        background: #121a2a;
+        border-color: #26324d;
+        color: #b9c8e9;
+      }
+      .seg {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        background: #121828;
+        border: 1px solid #26324d;
+        border-radius: 999px;
+        padding: 4px;
+      }
+      .seg button {
+        border-radius: 999px;
+        padding: 6px 10px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: #b9c8e9;
+        cursor: pointer;
+      }
+      .seg button.active {
+        background: #1e2b48;
+        border-color: #38507b;
+        color: #e8f0ff;
+      }
+
+      /* Stats pills (scrollable row so they’re not crammed) */
+      #statsWrap {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      #stats {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: max-content;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+      .pill {
+        background: #172032;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid #2a3550;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      /* Map & panels */
+      #wrap {
+        position: absolute;
+        inset: var(--hudH) var(--rightW) var(--logH) 0;
+        display: grid;
+        place-items: center;
+      }
+      #mapCanvas {
+        width: 100%;
+        height: 100%;
+        border: 1px solid #2a2f3a;
+        background: #0b0e14;
+        border-radius: 10px;
+      }
+
+      #callPanel {
+        position: absolute;
+        top: var(--hudH);
+        right: 0;
+        bottom: var(--logH);
+        width: var(--rightW);
+        background: rgba(12, 14, 20, 0.97);
+        border-left: 1px solid #293041;
+        padding: 10px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      #callPanel h2 {
+        margin: 6px 4px 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #b6c3dd;
+      }
+      .call {
+        border: 1px solid #33405a;
+        background: #141a28;
+        border-radius: 10px;
+        padding: 10px;
+        animation: ring 1.2s ease-in-out 2;
+      }
+      @keyframes ring {
+        0% {
+          box-shadow: 0 0 0 0 rgba(255, 70, 70, 0.35);
+        }
+        70% {
+          box-shadow: 0 0 0 8px rgba(255, 70, 70, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(255, 70, 70, 0);
+        }
+      }
+      .callHeader {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      .badge {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid #3a4764;
+        background: #182036;
+        color: #cfe3ff;
+      }
+      .sev1 {
+        background: #10331e;
+        border-color: #1f5a33;
+        color: #c3f7cf;
+      }
+      .sev2 {
+        background: #3a2b11;
+        border-color: #6b5218;
+        color: #ffe2ab;
+      }
+      .sev3 {
+        background: #3b1414;
+        border-color: #7a2929;
+        color: #ffb9b9;
+      }
+      .sev4 {
+        background: #4d0f0f;
+        border-color: #9b1f1f;
+        color: #ffd1d1;
+      }
+      .callTitle {
+        font-size: 13px;
+        color: #e8eef7;
+        margin: 0;
+      }
+      .callDesc {
+        font-size: 12px;
+        color: #b7c3dc;
+        margin: 6px 0 8px;
+        line-height: 1.3;
+      }
+      .callActions {
+        display: flex;
+        gap: 8px;
+      }
+
+      /* Log */
+      #log {
+        position: absolute;
+        inset: auto 0 0 0;
+        height: var(--logH);
+        overflow-y: auto;
+        padding: 8px 12px;
+        background: rgba(12, 14, 20, 0.97);
+        border-top: 1px solid #293041;
+        font-size: 13px;
+      }
+      #log p {
+        margin: 4px 0;
+      }
+
+      /* Dispatch popup */
+      #dispatchPopup {
+        position: absolute;
+        display: none;
+        z-index: 20;
+        transform: translate(-50%, -100%);
+      }
+      .popupCard {
+        min-width: 240px;
+        background: #131a29;
+        border: 1px solid #3a4764;
+        border-radius: 10px;
+        padding: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      }
+      .popupTitle {
+        font-size: 13px;
+        margin: 0 0 6px;
+        color: #e8eef7;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 6px 0;
+      }
+      .num {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .nbtn {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 1px solid #41527a;
+        background: #162139;
+        color: #d8e6ff;
+        cursor: pointer;
+      }
+      .nbox {
+        width: 48px;
+        text-align: center;
+        padding: 4px 6px;
+        background: #0f1626;
+        color: #e8eef7;
+        border: 1px solid #374a73;
+        border-radius: 6px;
+      }
+      .popupActions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .small {
+        font-size: 12px;
+        color: #9fb1d1;
+      }
+
+      /* Patrol hint */
+      #hint {
+        position: absolute;
+        left: 12px;
+        top: calc(var(--hudH) + 8px);
+        background: rgba(20, 24, 34, 0.92);
+        border: 1px solid #2a2f3a;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 12px;
+        color: #b6c3dd;
+      }
+
+      /* Shop overlay (no blur; log stays visible below) */
+      #shopOverlay {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: var(--logH);
+        background: rgba(5, 7, 12, 0.78);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+      }
+      #shop {
+        width: min(980px, 92vw);
+        max-height: 80vh;
+        overflow: auto;
+        background: #0f1524;
+        border: 1px solid #33405a;
+        border-radius: 16px;
+        padding: 16px;
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      #shop h2 {
+        margin: 0 0 10px;
+        font-size: 16px;
+        color: #cfe3ff;
+      }
+      .shopHeader {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      .shopCard {
+        flex: 1 1 300px;
+        border: 1px solid #33405a;
+        background: #141a28;
+        border-radius: 12px;
+        padding: 12px;
+      }
+      .shopRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .closeX {
+        background: #1a2438;
+        border: 1px solid #314162;
+        color: #dfe7ff;
+        border-radius: 8px;
+        padding: 6px 10px;
+        cursor: pointer;
+      }
+
+      @media (max-width: 980px) {
+        :root {
+          --hudH: 172px;
+          --rightW: 0px;
+          --logH: 180px;
+        }
+        #wrap {
+          inset: var(--hudH) 0 var(--logH) 0;
+        }
+        #callPanel {
+          position: fixed;
+          width: 100%;
+          height: 220px;
+          top: auto;
+          bottom: var(--logH);
+          left: 0;
+          right: 0;
+          border-left: 0;
+          border-top: 1px solid #293041;
+        }
+        #hint {
+          top: calc(var(--hudH) + 8px);
+        }
+        #shopOverlay {
+          bottom: var(--logH);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="hud">
+      <div id="brand"><h1>Priority One</h1></div>
+      <div id="controls">
+        <div class="seg" id="speedSeg">
+          <button data-speed="1" class="active">1×</button>
+          <button data-speed="2">2×</button>
+          <button data-speed="4">4×</button>
+        </div>
+        <button class="btn ghost" id="patrolModeBtn">🚶 Patrol: Off</button>
+        <button class="btn ghost" id="removePatrolBtn">
+          🗑️ Remove Patrol: Off
+        </button>
+        <button class="btn ghost" id="drillBtn">🎯 Drill Call</button>
+        <button class="btn ghost" id="intelBtn">🛰️ Intel Sweep</button>
+        <button class="btn" id="shopBtn">🏪 Shop</button>
+      </div>
+
+      <div id="statsWrap">
+        <div id="stats">
+          <div class="pill">Level: <span id="level">1</span></div>
+          <div class="pill">Officers: <span id="officers">4</span></div>
+          <div class="pill">Busy: <span id="busy">0</span></div>
+          <div class="pill">KIA: <span id="kia">0</span></div>
+          <div class="pill">Reputation: <span id="rep">100</span></div>
+          <div class="pill">Funds: $<span id="funds">0</span></div>
+          <div class="pill">Clock: <span id="clock">12:00</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="wrap"><canvas id="mapCanvas"></canvas></div>
+
+    <aside id="callPanel">
+      <h2>📞 Incoming Calls</h2>
+      <div id="callList"></div>
+    </aside>
+
+    <div id="dispatchPopup">
+      <div class="popupCard">
+        <p class="popupTitle">
+          Dispatch to <span id="dpIncidentId">#0</span> (sev
+          <span id="dpSev">0</span>)
+        </p>
+        <div class="row">
+          <span class="small">Recommended:</span>
+          <strong id="dpRecommended">0</strong>
+        </div>
+        <div class="row">
+          <span class="small">Send officers:</span>
+          <div class="num">
+            <button class="nbtn" id="dpMinus">−</button>
+            <input class="nbox" id="dpCount" type="number" min="1" value="1" />
+            <button class="nbtn" id="dpPlus">+</button>
+          </div>
+          <span class="small">Avail: <strong id="dpAvail">0</strong></span>
+        </div>
+        <div class="popupActions">
+          <button class="btn" id="dpQuick">Send Recommended (Q)</button>
+          <button class="btn" id="dpConfirm">Send</button>
+          <button class="btn ghost" id="dpCancel">Cancel</button>
+        </div>
+        <p class="small">
+          Tip: Shift+Click an incident circle to quick-send recommended.
+        </p>
+      </div>
+    </div>
+
+    <div id="hint" style="display: none">
+      Patrol mode: click two places on the map to set a route. (Consumes 1
+      officer.) Use “🗑️ Remove Patrol” to delete one.
+    </div>
+    <div id="log"></div>
+
+    <!-- Shop -->
+    <div id="shopOverlay" aria-modal="true" role="dialog">
+      <div id="shop">
+        <div class="shopHeader">
+          <h2>🏪 City Shop</h2>
+          <button class="closeX" id="shopClose">Close (Esc)</button>
+        </div>
+        <div class="shopCard">
+          <h3>Hire Officers</h3>
+          <div class="small">
+            Free roster slots: <span id="freeSlots">0</span> (first
+            <strong id="freeBaseOut">3</strong> are free daily)
+          </div>
+          <div class="shopRow">
+            <div>
+              <div class="small">
+                Hire cost: $<span id="hireCostOut">120</span>
+              </div>
+              <div class="small">
+                Daily salary (each beyond free): $<span id="salaryOut">18</span>
+              </div>
+            </div>
+            <div><button class="btn" id="hire1">+1 Officer</button></div>
+          </div>
+        </div>
+        <div class="shopCard">
+          <h3>City Grants</h3>
+          <div class="small">
+            Recurring every <span id="grantDaysOut">5</span> in-game days.
+          </div>
+          <div class="small">Amount: $<span id="grantAmtOut">300</span></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /* ============================================================
+   Tweaks for pause-on-event & lower success ceiling
+   - Opening dispatch popup pauses game; closing resumes
+   - Re-tuned success weights; hard clamp to 90%
+   - Debug logs show raw vs final chance but never >100%
+   ============================================================ */
+
+      let level = 1,
+        officers = 4,
+        busy = 0,
+        reputation = 100,
+        funds = 0,
+        kia = 0;
+
+      /* Economy */
+      const ECON = {
+        baseFreeOfficers: 3,
+        hireCost: 120,
+        salaryPerOfficerPerDay: 18,
+        grantEveryDays: 5,
+        grantAmount: 300,
+      };
+
+      /* Pause/time */
+      const GAME = {
+        paused: false,
+        pauseStarted: 0,
+        pauseFrozen: 0,
+        totalPaused: 0,
+      };
+      function pauseGame() {
+        if (GAME.paused) return;
+        GAME.paused = true;
+        GAME.pauseStarted = performance.now();
+        GAME.pauseFrozen = performance.now();
+        log("⏸️ Game paused.", "#b9c8e9");
+      }
+      function resumeGame() {
+        if (!GAME.paused) return;
+        const pausedFor = performance.now() - GAME.pauseStarted;
+        GAME.totalPaused += pausedFor;
+        GAME.paused = false;
+        log("▶️ Game resumed.", "#b9c8e9");
+      }
+      function nowMs() {
+        return GAME.paused ? GAME.pauseFrozen : performance.now();
+      }
+
+      /* Time & speed */
+      const SPEED = { mult: 1 };
+      const CLOCK = { start: nowMs(), baseSpeed: 120 };
+      function simHour() {
+        const t =
+          ((nowMs() - CLOCK.start) / 1000) * CLOCK.baseSpeed * SPEED.mult;
+        let h = Math.floor((t / 3600) % 24);
+        if (h < 0) h += 24;
+        return h;
+      }
+      function fmtClock() {
+        const t =
+          ((nowMs() - CLOCK.start) / 1000) * CLOCK.baseSpeed * SPEED.mult;
+        let h = Math.floor((t / 3600) % 24),
+          m = Math.floor((t % 3600) / 60);
+        const ampm = h >= 12 ? "PM" : "AM";
+        let hh = h % 12;
+        if (hh === 0) hh = 12;
+        return `${hh}:${String(m).padStart(2, "0")} ${ampm}`;
+      }
+      function simPerReal() {
+        return CLOCK.baseSpeed * SPEED.mult;
+      }
+      function simNowMin() {
+        return (((nowMs() - CLOCK.start) / 1000) * simPerReal()) / 60;
+      }
+      function simNowDays() {
+        return (
+          (((nowMs() - CLOCK.start) / 1000) * simPerReal()) / (60 * 60 * 24)
+        );
+      }
+      let lastPayrollDay = 0,
+        nextGrantDay = ECON.grantEveryDays;
+
+      /* Canvas */
+      const canvas = document.getElementById("mapCanvas");
+      const ctx = canvas.getContext("2d", { alpha: false });
+      function fitCanvas() {
+        const r = canvas.getBoundingClientRect();
+        canvas.width = Math.floor(r.width * devicePixelRatio);
+        canvas.height = Math.floor(r.height * devicePixelRatio);
+        ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+      }
+      window.addEventListener("resize", fitCanvas);
+      fitCanvas();
+
+      /* Log */
+      const logBox = document.getElementById("log");
+      function log(msg, color = "#cfe3ff") {
+        const p = document.createElement("p");
+        p.textContent = msg;
+        p.style.color = color;
+        logBox.prepend(p);
+      }
+
+      /* Graph */
+      const nodes = [
+        { id: 0, x: 0.08, y: 0.85 },
+        { id: 1, x: 0.2, y: 0.82 },
+        { id: 2, x: 0.35, y: 0.78 },
+        { id: 3, x: 0.5, y: 0.74 },
+        { id: 4, x: 0.65, y: 0.7 },
+        { id: 5, x: 0.8, y: 0.66 },
+        { id: 6, x: 0.08, y: 0.6 },
+        { id: 7, x: 0.2, y: 0.57 },
+        { id: 8, x: 0.35, y: 0.54 },
+        { id: 9, x: 0.5, y: 0.51 },
+        { id: 10, x: 0.65, y: 0.48 },
+        { id: 11, x: 0.8, y: 0.45 },
+        { id: 12, x: 0.08, y: 0.35 },
+        { id: 13, x: 0.2, y: 0.33 },
+        { id: 14, x: 0.35, y: 0.31 },
+        { id: 15, x: 0.5, y: 0.29 },
+        { id: 16, x: 0.65, y: 0.27 },
+        { id: 17, x: 0.8, y: 0.25 },
+        { id: 18, x: 0.08, y: 0.12 },
+        { id: 19, x: 0.2, y: 0.12 },
+        { id: 20, x: 0.35, y: 0.12 },
+        { id: 21, x: 0.5, y: 0.12 },
+        { id: 22, x: 0.65, y: 0.12 },
+        { id: 23, x: 0.8, y: 0.12 },
+      ];
+      function h(i, j) {
+        return [i, j];
+      }
+      const edges = [
+        h(0, 1),
+        h(1, 2),
+        h(2, 3),
+        h(3, 4),
+        h(4, 5),
+        h(6, 7),
+        h(7, 8),
+        h(8, 9),
+        h(9, 10),
+        h(10, 11),
+        h(12, 13),
+        h(13, 14),
+        h(14, 15),
+        h(15, 16),
+        h(16, 17),
+        h(18, 19),
+        h(19, 20),
+        h(20, 21),
+        h(21, 22),
+        h(22, 23),
+        h(0, 6),
+        h(6, 12),
+        h(12, 18),
+        h(1, 7),
+        h(7, 13),
+        h(13, 19),
+        h(2, 8),
+        h(8, 14),
+        h(14, 20),
+        h(3, 9),
+        h(9, 15),
+        h(15, 21),
+        h(4, 10),
+        h(10, 16),
+        h(16, 22),
+        h(5, 11),
+        h(11, 17),
+        h(17, 23),
+        h(1, 8),
+        h(8, 15),
+        h(2, 9),
+        h(9, 16),
+        h(7, 14),
+        h(14, 21),
+        h(6, 13),
+        h(13, 20),
+      ];
+      const adj = new Map();
+      function ndist(a, b) {
+        const dx = a.x - b.x,
+          dy = a.y - b.y;
+        return Math.hypot(dx, dy);
+      }
+      for (const [a, b] of edges) {
+        if (!adj.has(a)) adj.set(a, []);
+        if (!adj.has(b)) adj.set(b, []);
+        const w = ndist(nodes[a], nodes[b]);
+        adj.get(a).push({ to: b, w });
+        adj.get(b).push({ to: a, w });
+      }
+      const BASE_NODE = 1;
+
+      /* Game stats incl. Sev 4 */
+      const stats = {
+        speedPxPerSec: 120,
+        resolveMsBySeverity: [0, 2600, 3800, 5200, 7000],
+        failPenaltyBySeverity: [0, 5, 5, 6, 8],
+        payoutBySeverity: [0, 22, 36, 58, 90],
+        congestionMin: 0.84,
+        congestionMax: 0.96,
+      };
+
+      let incidents = [];
+      let cars = [];
+      let calls = [];
+      let highlightPing = null;
+      let nextIncidentId = 1,
+        nextCarId = 1,
+        nextCallId = 1;
+
+      /* Spawning with rep scaling */
+      const hotspots = [8, 9, 14, 15, 16, 2, 3, 4];
+
+      function weightedSeverity() {
+        const rb = clamp((reputation - 100) / 120, -0.5, 1); // -0.5..1 rough scale
+        let p4 = 0.01 + Math.max(0, rb) * 0.09; // 1% → 10%
+        let p3 = 0.15 + Math.max(0, rb) * 0.2 - Math.max(0, -rb) * 0.05;
+        let p2 = 0.25 + rb * 0.05;
+        let p1 = 1 - (p2 + p3 + p4);
+        p1 = clamp(p1, 0.1, 0.9);
+        if (Math.random() < 0.02) return 4; // rare spike
+        const r = Math.random();
+        if (r < p1) return 1;
+        if (r < p1 + p2) return 2;
+        if (r < p1 + p2 + p3) return 3;
+        return 4;
+      }
+
+      function ttlBySeverity(sev) {
+        return (
+          (sev === 1 ? 14000 : sev === 2 ? 11000 : sev === 3 ? 9000 : 8000) /
+          Math.max(0.001, SPEED.mult)
+        );
+      }
+      function pickSpawnNode() {
+        if (Math.random() < 0.7)
+          return hotspots[Math.floor(Math.random() * hotspots.length)];
+        let n;
+        do {
+          n = Math.floor(Math.random() * nodes.length);
+        } while (n === BASE_NODE);
+        return n;
+      }
+
+      const SPAWN = {
+        baseCallsPerHour: [
+          0.4, 0.35, 0.3, 0.3, 0.32, 0.45, 0.7, 0.9, 1.1, 1.3, 1.5, 1.6, 1.8,
+          2.0, 2.2, 2.3, 2.1, 1.8, 1.4, 1.2, 0.9, 0.7, 0.6, 0.5,
+        ],
+        burstMult: 1.8,
+        burstStartByHour: [
+          0.006, 0.006, 0.004, 0.004, 0.005, 0.007, 0.01, 0.012, 0.014, 0.016,
+          0.018, 0.02, 0.022, 0.024, 0.024, 0.022, 0.018, 0.014, 0.012, 0.01,
+          0.008, 0.007, 0.006, 0.006,
+        ],
+        burstDurMin: 1.5,
+        burstDurMax: 3.0,
+        lullChance: 0.1,
+        lullMult: 0.5,
+        lullDurMin: 1.5,
+        lullDurMax: 3.0,
+        minGapSimMin: 0.7,
+        nearCapScalePerIncident: 0.18,
+        jitter: 0.25,
+      };
+      const SPAWN_STATE = {
+        lastSpawnSimMin: 0,
+        burstUntilSimMin: 0,
+        lullUntilSimMin: 0,
+      };
+      function callsPerHourFor(h) {
+        return SPAWN.baseCallsPerHour[((h % 24) + 24) % 24] || 0.6;
+      }
+      function dynamicMaxActive() {
+        const avail = Math.max(0, officers - busy);
+        return Math.max(2, 3 + Math.floor(level / 3) + Math.floor(avail / 4));
+      }
+
+      function scheduleNextSpawn() {
+        const maxActive = dynamicMaxActive();
+        if (incidents.length >= maxActive) {
+          setTimeout(scheduleNextSpawn, 900);
+          return;
+        }
+
+        const h = simHour();
+        let ratePerHour = callsPerHourFor(h);
+
+        const free = Math.max(0, officers - busy);
+        const availability = clamp(
+          0.55 + (free / Math.max(1, officers)) * 0.45,
+          0.55,
+          1.15
+        );
+        ratePerHour *= availability;
+
+        ratePerHour *= Math.max(
+          0.25,
+          1 - incidents.length * SPAWN.nearCapScalePerIncident
+        );
+
+        const nowMin = simNowMin();
+        const inBurst = nowMin < SPAWN_STATE.burstUntilSimMin;
+        const inLull = nowMin < SPAWN_STATE.lullUntilSimMin;
+
+        if (!inBurst && !inLull) {
+          if (Math.random() < SPAWN.burstStartByHour[h]) {
+            const dur = rand(SPAWN.burstDurMin, SPAWN.burstDurMax);
+            SPAWN_STATE.burstUntilSimMin = nowMin + dur;
+            log(`🔥 Burst started for ~${dur.toFixed(1)} sim min`, "#ffd59e");
+          } else if (Math.random() < SPAWN.lullChance) {
+            const dur = rand(SPAWN.lullDurMin, SPAWN.lullDurMax);
+            SPAWN_STATE.lullUntilSimMin = nowMin + dur;
+            log(`🌙 Quiet lull for ~${dur.toFixed(1)} sim min`, "#a7b5d7");
+          }
+        }
+
+        let rateMult = 1.0;
+        if (nowMin < SPAWN_STATE.burstUntilSimMin) rateMult *= SPAWN.burstMult;
+        if (nowMin < SPAWN_STATE.lullUntilSimMin) rateMult *= SPAWN.lullMult;
+        ratePerHour *= rateMult;
+
+        const lambdaPerSimMin = Math.max(0.02, ratePerHour / 60);
+        let waitSimMin = -Math.log(1 - Math.random()) / lambdaPerSimMin;
+
+        const sinceLast = nowMin - SPAWN_STATE.lastSpawnSimMin;
+        const needMore = Math.max(0, SPAWN.minGapSimMin - sinceLast);
+        waitSimMin = Math.max(waitSimMin, needMore);
+
+        const j = SPAWN.jitter;
+        waitSimMin *= rand(1 - j, 1 + j);
+        const waitRealMs = Math.max(
+          350,
+          (waitSimMin * 60 * 1000) / Math.max(0.001, simPerReal())
+        );
+
+        setTimeout(() => {
+          if (GAME.paused) {
+            setTimeout(scheduleNextSpawn, 400);
+            return;
+          }
+          if (incidents.length < dynamicMaxActive()) {
+            spawnIncident();
+            SPAWN_STATE.lastSpawnSimMin = simNowMin();
+          }
+          scheduleNextSpawn();
+        }, waitRealMs);
+      }
+
+      /* Call text */
+      const callerNames = [
+        "Unknown",
+        "Dalton",
+        "Manager",
+        "Store Clerk",
+        "Bus Driver",
+        "Security Guard",
+        "Neighbor",
+      ];
+      const types = [
+        { t: "Noise Complaint", short: "Loud argument reported.", sev: 1 },
+        { t: "Shoplifting", short: "Teenager ran out with items.", sev: 1 },
+        { t: "Suspicious Person", short: "Loitering near entrance.", sev: 1 },
+        { t: "Traffic Accident", short: "Two vehicles, no injuries.", sev: 2 },
+        {
+          t: "Fight in Progress",
+          short: "Multiple individuals involved.",
+          sev: 2,
+        },
+        {
+          t: "Burglary Alarm",
+          short: "Motion detected at back door of bank.",
+          sev: 2,
+        },
+        { t: "Armed Robbery", short: "Suspect may be armed.", sev: 3 },
+        { t: "Vehicle Pursuit", short: "Reckless driver fleeing.", sev: 3 },
+        { t: "Large Disturbance", short: "Crowd forming; escalating.", sev: 3 },
+        {
+          t: "Critical Incident",
+          short: "Multiple reports; extremely dangerous.",
+          sev: 4,
+        },
+      ];
+      const streetsA = [
+        "Maple",
+        "Oak",
+        "Cedar",
+        "Pine",
+        "River",
+        "Liberty",
+        "Summit",
+        "Prospect",
+        "Broad",
+      ];
+      const streetsB = ["Ave", "St", "Rd", "Blvd", "Way", "Ln", "Dr"];
+      function randPick(a) {
+        return a[Math.floor(Math.random() * a.length)];
+      }
+      function streetName() {
+        return `${randPick(streetsA)} ${randPick(streetsB)}`;
+      }
+
+      const callListEl = document.getElementById("callList");
+      function createCallForIncident(inc) {
+        const call = { id: nextCallId++, incidentId: inc.id, el: null };
+        calls.push(call);
+        const desc =
+          types.find((t) => t.sev === inc.severity) || randPick(types);
+        const loc = streetName();
+        const caller = randPick(callerNames);
+        const card = document.createElement("div");
+        card.className = "call";
+        card.dataset.callId = call.id;
+        const sevClass =
+          inc.severity === 1
+            ? "sev1"
+            : inc.severity === 2
+            ? "sev2"
+            : inc.severity === 3
+            ? "sev3"
+            : "sev4";
+        card.innerHTML = `
+    <div class="callHeader">
+      <span class="badge ${sevClass}">Sev ${inc.severity}</span>
+      <span class="badge">#${inc.id}</span>
+    </div>
+    <h3 class="callTitle">Incoming call – ${desc.t}</h3>
+    <p class="callDesc">Caller: <strong>${caller}</strong><br/>Location: <strong>${loc}</strong><br/>"${
+          inc.revealed ? `Confirmed severity ${inc.severity}` : desc.short
+        }"</p>
+    <div class="callActions">
+      <button class="btn view">View</button>
+      <button class="btn accept">Quick Send</button>
+    </div>`;
+        // View: ping & pause (so clicking from the list also pauses)
+        card.querySelector(".view").onclick = () => {
+          highlightPing = {
+            nodeId: inc.nodeId,
+            until: nowMs() + 1800 / Math.max(0.001, SPEED.mult),
+          };
+          log(`📍 Viewing #${inc.id} (sev ${inc.severity})`, `#b6d3ff`);
+          pauseGame();
+        };
+        card.querySelector(".accept").onclick = () => {
+          quickSendRecommended(inc);
+        };
+        callListEl.prepend(card);
+        call.el = card;
+      }
+      function removeCallByIncident(id) {
+        const c = calls.find((x) => x.incidentId === id);
+        if (!c) return;
+        if (c.el && c.el.parentNode) c.el.parentNode.removeChild(c.el);
+        calls.splice(calls.indexOf(c), 1);
+      }
+
+      /* Incidents */
+      function spawnIncident(opts = {}) {
+        const nid = opts.nodeId ?? pickSpawnNode();
+        const sev = opts.severity ?? weightedSeverity();
+        const now = nowMs();
+        const inc = {
+          id: nextIncidentId++,
+          nodeId: nid,
+          severity: sev,
+          createdAt: now,
+          expiresAt: now + ttlBySeverity(sev),
+          revealed: !!opts.revealed,
+          _graceUntil: 0,
+        };
+        incidents.push(inc);
+        log(
+          `🚨 New incident #${inc.id} (sev ${sev})`,
+          sev === 4 ? "#ff9b9b" : "#ffb3b3"
+        );
+        createCallForIncident(inc);
+        if (!opts.manual && SPEED.mult > 1) {
+          setSpeed(1);
+          log(
+            "⏱️ Incident spawned while fast-forwarding → speed reset to 1×.",
+            "#ffd59e"
+          );
+        }
+        if (!opts.manual) scheduleNextSpawn();
+      }
+
+      /* Path */
+      function shortestPath(src, dst) {
+        const N = nodes.length,
+          dist = new Array(N).fill(Infinity),
+          prev = new Array(N).fill(-1),
+          vis = new Array(N).fill(false);
+        dist[src] = 0;
+        for (let k = 0; k < N; k++) {
+          let u = -1,
+            best = Infinity;
+          for (let i = 0; i < N; i++)
+            if (!vis[i] && dist[i] < best) {
+              best = dist[i];
+              u = i;
+            }
+          if (u === -1) break;
+          vis[u] = true;
+          if (u === dst) break;
+          for (const { to, w } of adj.get(u) || []) {
+            const nd = dist[u] + w;
+            if (nd < dist[to]) {
+              dist[to] = nd;
+              prev[to] = u;
+            }
+          }
+        }
+        if (dist[dst] === Infinity) return null;
+        const out = [];
+        for (let cur = dst; cur !== -1; cur = prev[cur]) out.push(cur);
+        out.reverse();
+        return out;
+      }
+
+      /* Dispatch popup */
+      const popup = document.getElementById("dispatchPopup");
+      const dpIncidentId = document.getElementById("dpIncidentId");
+      const dpSev = document.getElementById("dpSev");
+      const dpRecommended = document.getElementById("dpRecommended");
+      const dpAvail = document.getElementById("dpAvail");
+      const dpCount = document.getElementById("dpCount");
+      const dpMinus = document.getElementById("dpMinus");
+      const dpPlus = document.getElementById("dpPlus");
+      const dpConfirm = document.getElementById("dpConfirm");
+      const dpQuick = document.getElementById("dpQuick");
+      const dpCancel = document.getElementById("dpCancel");
+      let popupIncident = null;
+
+      function openDispatchPopup(inc, px = null, py = null) {
+        popupIncident = inc;
+        const rec = inc.severity;
+        dpIncidentId.textContent = "#" + inc.id;
+        dpSev.textContent = inc.severity;
+        dpRecommended.textContent = rec;
+        dpAvail.textContent = officers;
+        dpCount.value = Math.min(rec, Math.max(1, officers));
+
+        // TTL grace + PAUSE on open
+        inc._graceUntil = Math.max(
+          inc._graceUntil,
+          nowMs() + 3000 / Math.max(0.001, SPEED.mult)
+        );
+        pauseGame();
+
+        const wrap = document.getElementById("wrap").getBoundingClientRect();
+        const p = toPx(nodes[inc.nodeId]);
+        const px2 = px ?? p.x,
+          py2 = py ?? p.y;
+        popup.style.left = `${Math.min(
+          wrap.width - 130,
+          Math.max(130, px2)
+        )}px`;
+        popup.style.top = `${Math.min(wrap.height - 60, Math.max(100, py2))}px`;
+        popup.style.display = "block";
+        setTimeout(() => {
+          dpConfirm.focus();
+        }, 0);
+      }
+      function closeDispatchPopup() {
+        popup.style.display = "none";
+        popupIncident = null;
+        resumeGame();
+      }
+
+      function quickSendRecommended(inc) {
+        const count = Math.min(officers, Math.max(1, inc.severity));
+        tryDispatch(inc, count);
+      }
+
+      dpMinus.onclick = () => {
+        dpCount.value = Math.max(1, parseInt(dpCount.value || "1") - 1);
+      };
+      dpPlus.onclick = () => {
+        dpCount.value = Math.min(officers, parseInt(dpCount.value || "1") + 1);
+      };
+      dpQuick.onclick = () => {
+        if (!popupIncident) return;
+        quickSendRecommended(popupIncident);
+        closeDispatchPopup();
+      };
+      dpCancel.onclick = () => closeDispatchPopup();
+      dpConfirm.onclick = () => {
+        if (!popupIncident) return;
+        const count = Math.min(
+          officers,
+          Math.max(1, parseInt(dpCount.value || "1"))
+        );
+        tryDispatch(popupIncident, count);
+        closeDispatchPopup();
+      };
+
+      /* Map interaction */
+      canvas.addEventListener("click", (ev) => {
+        const clickPx = { x: ev.offsetX, y: ev.offsetY };
+        if (PATROL.removeMode) {
+          const idx = findNearestPatrolIndex(clickPx.x, clickPx.y, 24);
+          if (idx != -1) {
+            const car = cars[idx];
+            cars.splice(idx, 1);
+            busy = Math.max(0, busy - 1);
+            officers += 1;
+            updateStats();
+            log("🗑️ Patrol removed. Officer returned to pool.", "#ffdfae");
+          } else {
+            log("No patrol near that click.", "#9fb1d1");
+          }
+          return;
+        }
+
+        const nid = pickNearestNode(ev.offsetX, ev.offsetY);
+        if (PATROL.mode) {
+          PATROL.pickNode(nid);
+          return;
+        }
+        const inc = findIncidentOnNode(nid);
+        if (!inc) {
+          log(
+            "No incident here (use a red dot or a Call’s Quick Send).",
+            "#9fb1d1"
+          );
+          return;
+        }
+        if (ev.shiftKey) {
+          quickSendRecommended(inc);
+          return;
+        }
+        openDispatchPopup(inc, ev.offsetX, ev.offsetY); // <-- opening popup pauses the game
+      });
+      function pickNearestNode(px, py) {
+        const nx = px / canvas.clientWidth,
+          ny = py / canvas.clientHeight;
+        let best = -1,
+          bd = Infinity;
+        for (const n of nodes) {
+          const d = Math.hypot(n.x - nx, n.y - ny);
+          if (d < bd) {
+            bd = d;
+            best = n.id;
+          }
+        }
+        return best;
+      }
+      function findIncidentOnNode(nid) {
+        return incidents.find((i) => i.nodeId === nid);
+      }
+
+      /* Dispatch & cars */
+      function tryDispatch(inc, sendCount) {
+        if (officers < sendCount) {
+          log(`Not enough officers (avail ${officers}).`, `#ffd18f`);
+          return;
+        }
+        officers -= sendCount;
+        busy += sendCount;
+        updateStats();
+        const pathOut = shortestPath(BASE_NODE, inc.nodeId);
+        if (!pathOut) {
+          log("No path to incident!", "#ffa6a6");
+          officers += sendCount;
+          busy -= sendCount;
+          updateStats();
+          return;
+        }
+        for (let i = 0; i < sendCount; i++) {
+          const congestion = rand(stats.congestionMin, stats.congestionMax);
+          cars.push({
+            id: nextCarId++,
+            type: "response",
+            state: "to_incident",
+            path: pathOut.slice(),
+            segIndex: 0,
+            t: 0,
+            incidentId: inc.id,
+            speedPx: stats.speedPxPerSec * congestion * SPEED.mult,
+            color: i === 0 ? "#7dc3ff" : i === 1 ? "#a1e3ff" : "#cfeeff",
+            direction: "out",
+          });
+        }
+        removeCallByIncident(inc.id);
+        log(
+          `🚓 Dispatched ${sendCount} to #${inc.id} (rec ${inc.severity})`,
+          `#cfe3ff`
+        );
+      }
+
+      function beginReturn(car) {
+        car.state = "returning";
+        car.direction = "back";
+        const here =
+          car.path && car.path.length
+            ? car.path[car.path.length - 1]
+            : BASE_NODE;
+        car.path = shortestPath(here, BASE_NODE) || [here, BASE_NODE];
+        car.segIndex = 0;
+        car.t = 0;
+        const congestion = rand(stats.congestionMin, stats.congestionMax);
+        car.speedPx = stats.speedPxPerSec * congestion * SPEED.mult;
+      }
+
+      /* Ticks */
+      function updateIncidents(now) {
+        for (let i = incidents.length - 1; i >= 0; i--) {
+          const inc = incidents[i];
+          const ttlLeft = inc.expiresAt - now;
+          const inGrace = now < (inc._graceUntil || 0);
+          if (ttlLeft <= 0 && !inGrace) {
+            log(`⚠️ Missed #${inc.id} (-5 rep)`, `#ffcc88`);
+            reputation = Math.max(0, reputation - 5);
+            removeCallByIncident(inc.id);
+            incidents.splice(i, 1);
+            updateStats();
+          }
+        }
+      }
+
+      /* ---- SUCCESS CHANCE TUNING ----
+   Softer weights + 90% hard cap
+   ratio weight: 0.35 (was 0.45)
+   travel weight: 0.20 (was 0.25)
+   idleBoost max: 0.10 (was 0.20)
+   patrolBoost: 0.10 (was 0.15)
+*/
+      const SUCCESS = {
+        base: 0.2,
+        ratioW: 0.35,
+        travelW: 0.2,
+        idleMax: 0.1,
+        patrolBoost: 0.1,
+        min: 0.12,
+        max: 0.9,
+      };
+
+      function updateCars(dt) {
+        for (const car of cars) {
+          const segTo = nodes[car.path[car.segIndex + 1]];
+          if (!segTo) {
+            if (car.state === "to_incident") {
+              const inc = incidents.find((i) => i.id === car.incidentId);
+              if (!inc) {
+                if (car.type === "response") beginReturn(car);
+                else if (car.type === "patrol") {
+                  car.state = "returning";
+                  car.direction = "back";
+                  car.path = car._pathBack.slice();
+                  car.segIndex = 0;
+                  car.t = 0;
+                }
+                continue;
+              }
+              car.state = "resolving";
+              car.resolveUntil =
+                nowMs() +
+                stats.resolveMsBySeverity[inc.severity] /
+                  Math.max(0.001, SPEED.mult);
+              if (!inc._claimed) {
+                inc._claimed = true;
+
+                const travelSeconds = (nowMs() - inc.createdAt) / 1000;
+                const responders = cars.filter(
+                  (c) =>
+                    c.incidentId === inc.id &&
+                    (c.state === "to_incident" ||
+                      c.state === "resolving" ||
+                      c.state === "returning")
+                );
+                const sent = responders.length;
+                const ratio = Math.min(1, sent / inc.severity);
+                const patrolBoost = PATROL.anyNear(inc.nodeId)
+                  ? SUCCESS.patrolBoost
+                  : 0.0;
+                const travelPenalty = Math.max(0, 1 - travelSeconds / 30);
+                const idleBoost = Math.min(
+                  SUCCESS.idleMax,
+                  Math.max(0, officers * 0.02)
+                );
+
+                const raw =
+                  SUCCESS.base +
+                  SUCCESS.ratioW * ratio +
+                  SUCCESS.travelW * travelPenalty +
+                  idleBoost +
+                  patrolBoost;
+                const successChance = clamp(raw, SUCCESS.min, SUCCESS.max);
+
+                // Debug: percentages but clamped final
+                console.log({
+                  incidentId: inc.id,
+                  severity: inc.severity,
+                  sent,
+                  modifiers: {
+                    ratio,
+                    patrolBoost,
+                    travelPenalty,
+                    idleBoost,
+                  },
+                  rawChance: +(raw * 100).toFixed(1) + "%",
+                  finalChance: +(successChance * 100).toFixed(1) + "%",
+                });
+
+                // Remove incident + card
+                const idx = incidents.findIndex((x) => x.id === inc.id);
+                if (idx > -1) incidents.splice(idx, 1);
+                removeCallByIncident(inc.id);
+
+                if (Math.random() < successChance) {
+                  const pay = stats.payoutBySeverity[inc.severity];
+                  funds += pay;
+                  reputation = Math.min(200, reputation + 1);
+                  log(`✅ Resolved #${inc.id} (+$${pay})`, "#b5ffb5");
+                } else {
+                  const pen = stats.failPenaltyBySeverity[inc.severity] || 5;
+                  reputation = Math.max(0, reputation - pen);
+                  log(
+                    `❌ Resolution failed for #${inc.id} (-${pen} rep)`,
+                    "#ff9ea1"
+                  );
+                }
+
+                // Casualties (response only)
+                const baseCas =
+                  [0, 0.003, 0.012, 0.05, 0.09][inc.severity] || 0.01;
+                const undersend = sent > 0 ? inc.severity / sent : 3;
+                const riskMult = Math.min(3.5, Math.pow(undersend, 1.4));
+                const deathP = clamp(
+                  baseCas * riskMult,
+                  0.001,
+                  inc.severity >= 4
+                    ? 0.28
+                    : inc.severity === 3
+                    ? 0.22
+                    : inc.severity === 2
+                    ? 0.12
+                    : 0.04
+                );
+
+                for (const r of responders) {
+                  if (Math.random() < deathP) {
+                    if (r.type === "response") {
+                      if (r.state !== "done") {
+                        busy = Math.max(0, busy - 1);
+                      }
+                      kia += 1;
+                      r.state = "done";
+                    }
+                  } else {
+                    if (
+                      r.type === "response" &&
+                      r.state !== "returning" &&
+                      r.state !== "done"
+                    )
+                      beginReturn(r);
+                  }
+                }
+                updateStats();
+              } else {
+                beginReturn(car);
+              }
+            } else if (car.state === "returning") {
+              car.state = "done";
+              if (car.type === "response") {
+                busy = Math.max(0, busy - 1);
+                officers += 1; // survivor returns
+                updateStats();
+              } else if (car.type === "patrol") {
+                car.state = "to_incident";
+                car.direction = "out";
+                car.path = car._pathOut.slice();
+                car.segIndex = 0;
+                car.t = 0;
+              }
+            }
+            continue;
+          }
+
+          if (car.state === "to_incident" || car.state === "returning") {
+            const segFrom = nodes[car.path[car.segIndex]];
+            const A = toPx(segFrom),
+              B = toPx(segTo);
+            const len = Math.hypot(B.x - A.x, B.y - A.y);
+            const segTime = len / car.speedPx;
+            car.t += dt / segTime;
+            if (car.t >= 1) {
+              car.segIndex++;
+              car.t = 0;
+            }
+          } else if (car.state === "resolving") {
+            if (nowMs() >= car.resolveUntil) {
+              if (car.type === "response") beginReturn(car);
+              else {
+                car.state = "to_incident";
+                car.direction = "out";
+                car.segIndex = 0;
+                car.t = 0;
+              }
+            }
+          }
+        }
+        for (let i = cars.length - 1; i >= 0; i--)
+          if (cars[i].state === "done") cars.splice(i, 1);
+      }
+
+      /* Patrol system (unchanged from last drop: consumes officer & deletable) */
+      const PATROL = {
+        mode: false,
+        removeMode: false,
+        pending: null,
+        radiusPx: 70,
+        toggle() {
+          this.mode = !this.mode;
+          if (this.mode) this.removeMode = false;
+          document.getElementById("patrolModeBtn").textContent = this.mode
+            ? "🚶 Patrol: On"
+            : "🚶 Patrol: Off";
+          document.getElementById("removePatrolBtn").textContent =
+            "🗑️ Remove Patrol: Off";
+          document.getElementById("hint").style.display =
+            this.mode || this.removeMode ? "block" : "none";
+        },
+        toggleRemove() {
+          this.removeMode = !this.removeMode;
+          if (this.removeMode) this.mode = false;
+          document.getElementById("removePatrolBtn").textContent = this
+            .removeMode
+            ? "🗑️ Remove Patrol: On"
+            : "🗑️ Remove Patrol: Off";
+          document.getElementById("patrolModeBtn").textContent =
+            "🚶 Patrol: Off";
+          document.getElementById("hint").style.display =
+            this.mode || this.removeMode ? "block" : "none";
+        },
+        pickNode(nid) {
+          if (this.pending === null) {
+            this.pending = nid;
+            log("Patrol start set. Choose destination.", "#a9c4ff");
+          } else {
+            if (officers <= 0) {
+              log("❌ No available officers to deploy a patrol.", "#ffb3b3");
+              this.pending = null;
+              this.mode = false;
+              document.getElementById("patrolModeBtn").textContent =
+                "🚶 Patrol: Off";
+              document.getElementById("hint").style.display = "none";
+              return;
+            }
+            officers -= 1;
+            busy += 1;
+            updateStats();
+
+            const start = this.pending,
+              end = nid;
+            this.pending = null;
+            const out = shortestPath(start, end);
+            if (!out) {
+              log("No patrol path found.", "#ffa6a6");
+              officers += 1;
+              busy = Math.max(0, busy - 1);
+              updateStats();
+              return;
+            }
+            const back = shortestPath(end, start) || out.slice().reverse();
+            const congestion = rand(0.88, 0.98);
+            const car = {
+              id: nextCarId++,
+              type: "patrol",
+              state: "to_incident",
+              path: out.slice(),
+              _pathOut: out.slice(),
+              _pathBack: back.slice(),
+              segIndex: 0,
+              t: 0,
+              incidentId: -1,
+              speedPx: stats.speedPxPerSec * 0.8 * congestion * SPEED.mult,
+              color: "#7fffaf",
+              direction: "out",
+            };
+            cars.push(car);
+            log(
+              "👮 Patrol deployed (consumed 1 officer). Nearby incidents gain +10% success.",
+              "#b6ffcc"
+            );
+            this.mode = false;
+            document.getElementById("patrolModeBtn").textContent =
+              "🚶 Patrol: Off";
+            document.getElementById("hint").style.display = "none";
+          }
+        },
+        anyNear(nodeId) {
+          const p = toPx(nodes[nodeId]);
+          for (const c of cars) {
+            if (c.type !== "patrol") continue;
+            const pos = carPosition(c);
+            if (Math.hypot(pos.x - p.x, pos.y - p.y) <= this.radiusPx)
+              return true;
+          }
+          return false;
+        },
+      };
+
+      /* Intel & Drill */
+      let intelCDUntil = 0;
+      function intelSweep() {
+        const now = nowMs();
+        if (now < intelCDUntil) {
+          const secs = Math.ceil((intelCDUntil - now) / 1000);
+          log(`🛰️ Intel on cooldown (${secs}s)`, "#cfd9ff");
+          return;
+        }
+        intelCDUntil = now + 90000;
+        for (const inc of incidents) {
+          inc.revealed = true;
+          inc.expiresAt += 3000;
+        }
+        for (const c of calls) {
+          const inc = incidents.find((i) => i.id === c.incidentId);
+          if (!inc || !c.el) continue;
+          const descEl = c.el.querySelector(".callDesc");
+          if (descEl)
+            descEl.innerHTML = descEl.innerHTML.replace(
+              /".*"/,
+              `"Confirmed severity ${inc.severity}"`
+            );
+        }
+        log("🛰️ Intel Sweep: severities confirmed & TTLs extended.", "#dfe8ff");
+      }
+      function spawnDrill() {
+        const nid = pickSpawnNode();
+        const sev = 1;
+        spawnIncident({
+          nodeId: nid,
+          severity: sev,
+          revealed: true,
+          manual: true,
+        });
+        const inc = incidents[incidents.length - 1];
+        inc._drill = true;
+        inc.expiresAt += 15000;
+        log(
+          "🎯 Drill call spawned (no rep penalty, reduced payout).",
+          "#e8f7b5"
+        );
+      }
+
+      /* Render */
+      function draw() {
+        ctx.fillStyle = "#0b0e14";
+        ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+        drawBackdrop();
+
+        ctx.lineWidth = 6;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "#273142";
+        ctx.beginPath();
+        for (const [a, b] of edges) {
+          const A = toPx(nodes[a]),
+            B = toPx(nodes[b]);
+          ctx.moveTo(A.x, A.y);
+          ctx.lineTo(B.x, B.y);
+        }
+        ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#3a4a66";
+        ctx.beginPath();
+        for (const [a, b] of edges) {
+          const A = toPx(nodes[a]),
+            B = toPx(nodes[b]);
+          ctx.moveTo(A.x, A.y);
+          ctx.lineTo(B.x, B.y);
+        }
+        ctx.stroke();
+
+        const base = toPx(nodes[BASE_NODE]);
+        ctx.fillStyle = "#73a9ff";
+        ctx.strokeStyle = "#b6d3ff";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.rect(base.x - 9, base.y - 9, 18, 18);
+        ctx.fill();
+        ctx.stroke();
+
+        // Patrol influence zones
+        ctx.save();
+        ctx.globalAlpha = 0.08;
+        ctx.fillStyle = "#7fffaf";
+        for (const c of cars) {
+          if (c.type === "patrol") {
+            const pos = carPosition(c);
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, PATROL.radiusPx, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        ctx.restore();
+
+        // Incidents
+        for (const inc of incidents) {
+          const p = toPx(nodes[inc.nodeId]);
+          const r = 8 + inc.severity * 2;
+          ctx.beginPath();
+          ctx.fillStyle = [
+            ,
+            "rgba(255,90,90,.9)",
+            "rgba(255,120,80,.95)",
+            "rgba(255,60,60,1)",
+            "rgba(255,40,40,1)",
+          ][inc.severity];
+          ctx.shadowColor = "rgba(255,70,70,.6)";
+          ctx.shadowBlur = 10;
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          const ttl = Math.max(
+            0,
+            inc.expiresAt - Math.max(nowMs(), inc._graceUntil || 0)
+          );
+          const full = ttlBySeverity(inc.severity);
+          const frac = Math.min(1, ttl / full);
+          ctx.strokeStyle = "#ffd5d5";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(
+            p.x,
+            p.y,
+            r + 4,
+            -Math.PI / 2,
+            -Math.PI / 2 + Math.PI * 2 * frac
+          );
+          ctx.stroke();
+        }
+
+        if (highlightPing && nowMs() < highlightPing.until) {
+          const p = toPx(nodes[highlightPing.nodeId]);
+          const t =
+            (highlightPing.until - nowMs()) /
+            (1800 / Math.max(0.001, SPEED.mult));
+          const rr = 28 + (1 - t) * 12;
+          ctx.strokeStyle = "rgba(140,200,255,.9)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, rr, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          highlightPing = null;
+        }
+
+        // Cars
+        for (const car of cars) {
+          const pos = carPosition(car);
+          drawCar(pos.x, pos.y, car.color, car.direction);
+        }
+      }
+      function drawBackdrop() {
+        const w = canvas.clientWidth,
+          h = canvas.clientHeight;
+        const g = ctx.createRadialGradient(
+          w * 0.5,
+          h * 0.5,
+          10,
+          w * 0.5,
+          h * 0.5,
+          Math.max(w, h) * 0.7
+        );
+        g.addColorStop(0, "#0b0e14");
+        g.addColorStop(1, "#0a0c12");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = "#121722";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let x = 0; x < w; x += 40) {
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h);
+        }
+        for (let y = 0; y < h; y += 40) {
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+        }
+        ctx.stroke();
+      }
+      function carPosition(car) {
+        const a = nodes[car.path[car.segIndex]],
+          b = nodes[car.path[car.segIndex + 1]] || a;
+        const A = toPx(a),
+          B = toPx(b);
+        return { x: A.x + (B.x - A.x) * car.t, y: A.y + (B.y - A.y) * car.t };
+      }
+      function drawCar(x, y, color, dir) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.fillStyle = color;
+        ctx.strokeStyle = "#0b0e14";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(-7, -5, 14, 10, 2);
+        else ctx.rect(-7, -5, 14, 10);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = dir === "out" ? "#8ee6ff" : "#7fffaf";
+        ctx.beginPath();
+        ctx.arc(0, 0, 2.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      /* Utils & economy */
+      function toPx(n) {
+        return { x: n.x * canvas.clientWidth, y: n.y * canvas.clientHeight };
+      }
+      function rand(a, b) {
+        return a + Math.random() * (b - a);
+      }
+      function clamp(v, a, b) {
+        return Math.max(a, Math.min(b, v));
+      }
+      function salariedCount() {
+        return Math.max(0, officers - ECON.baseFreeOfficers);
+      }
+
+      function doPayrollIfNeeded() {
+        const day = Math.floor(simNowDays());
+        if (day > lastPayrollDay) {
+          const salaried = salariedCount();
+          const costEach = ECON.salaryPerOfficerPerDay;
+          const totalCost = salaried * costEach;
+
+          if (salaried > 0) {
+            if (funds >= totalCost) {
+              funds -= totalCost;
+              log(
+                `🧾 Payroll: -$${totalCost} for ${salaried} salaried officer(s).`,
+                "#ffd9b0"
+              );
+            } else {
+              const affordable = Math.floor(funds / costEach);
+              const quitCount = Math.max(0, salaried - affordable);
+              const payAmt = affordable * costEach;
+              if (payAmt > 0) {
+                funds -= payAmt;
+                log(
+                  `🧾 Partial payroll: -$${payAmt} (paid ${affordable}/${salaried}).`,
+                  "#ffd9b0"
+                );
+              }
+              if (quitCount > 0) {
+                const before = officers;
+                officers = Math.max(busy, officers - quitCount);
+                const actualQuit = Math.max(0, before - officers);
+                log(
+                  `🚪 ${actualQuit} officer(s) quit due to unpaid salary.`,
+                  "#ffb3b3"
+                );
+              }
+            }
+            updateStats();
+          }
+          lastPayrollDay = day;
+        }
+      }
+
+      function doGrantIfDue() {
+        const day = Math.floor(simNowDays());
+        if (day >= nextGrantDay) {
+          funds += ECON.grantAmount;
+          log(`🏛️ City grant received: +$${ECON.grantAmount}`, "#c9ffbf");
+          updateStats();
+          nextGrantDay += ECON.grantEveryDays;
+        }
+      }
+
+      function updateShopUI() {
+        document.getElementById("freeSlots").textContent = Math.max(
+          0,
+          ECON.baseFreeOfficers - Math.min(officers, ECON.baseFreeOfficers)
+        );
+        document.getElementById("freeBaseOut").textContent =
+          ECON.baseFreeOfficers;
+        document.getElementById("hireCostOut").textContent = ECON.hireCost;
+        document.getElementById("salaryOut").textContent =
+          ECON.salaryPerOfficerPerDay;
+        document.getElementById("grantDaysOut").textContent =
+          ECON.grantEveryDays;
+        document.getElementById("grantAmtOut").textContent = ECON.grantAmount;
+      }
+      function updateStats() {
+        document.getElementById("level").textContent = level;
+        document.getElementById("officers").textContent = officers;
+        document.getElementById("busy").textContent = busy;
+        const kiaEl = document.getElementById("kia");
+        if (kiaEl) kiaEl.textContent = kia;
+        document.getElementById("rep").textContent = reputation;
+        document.getElementById("funds").textContent = funds.toFixed(0);
+        document.getElementById("clock").textContent = fmtClock();
+      }
+
+      /* Frame loop */
+      let last = nowMs();
+      function frame() {
+        const now = nowMs();
+        const dt = (now - last) / 1000;
+        last = now;
+
+        if (!GAME.paused) {
+          doPayrollIfNeeded();
+          doGrantIfDue();
+          updateIncidents(now);
+          updateCars(dt);
+        }
+
+        draw();
+        updateStats();
+        requestAnimationFrame(frame);
+      }
+
+      /* Speed helpers */
+      const speedSeg = document.getElementById("speedSeg");
+      function setSpeed(v) {
+        SPEED.mult = v;
+        for (const b of speedSeg.querySelectorAll("button"))
+          b.classList.toggle("active", parseFloat(b.dataset.speed) === v);
+        for (const c of cars) {
+          if (c.type === "response" || c.type === "patrol") {
+            const base =
+              c.type === "patrol"
+                ? stats.speedPxPerSec * 0.8
+                : stats.speedPxPerSec;
+            c.speedPx =
+              base *
+              rand(stats.congestionMin, stats.congestionMax) *
+              SPEED.mult;
+          }
+        }
+        SPAWN_STATE.burstUntilSimMin = Math.min(
+          SPAWN_STATE.burstUntilSimMin,
+          simNowMin() + 0.6
+        );
+        SPAWN_STATE.lullUntilSimMin = Math.min(
+          SPAWN_STATE.lullUntilSimMin,
+          simNowMin() + 0.6
+        );
+        log(`⏩ Speed set to ${SPEED.mult}×`, "#cfe3ff");
+      }
+
+      /* Controls */
+      speedSeg.addEventListener("click", (e) => {
+        if (e.target.tagName !== "BUTTON") return;
+        setSpeed(parseFloat(e.target.dataset.speed) || 1);
+      });
+      document.getElementById("patrolModeBtn").onclick = () => PATROL.toggle();
+      document.getElementById("removePatrolBtn").onclick = () =>
+        PATROL.toggleRemove();
+      document.getElementById("drillBtn").onclick = () => spawnDrill();
+      document.getElementById("intelBtn").onclick = () => intelSweep();
+
+      /* Shop */
+      const shopOverlay = document.getElementById("shopOverlay");
+      document.getElementById("shopBtn").onclick = openShop;
+      document.getElementById("shopClose").onclick = closeShop;
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && GAME.paused && popup.style.display === "none")
+          closeShop();
+      });
+      function openShop() {
+        if (GAME.paused) return;
+        pauseGame();
+        shopOverlay.style.display = "flex";
+        updateShopUI();
+      }
+      function closeShop() {
+        if (!GAME.paused) return;
+        shopOverlay.style.display = "none";
+        resumeGame();
+      }
+
+      /* Patrol helpers */
+      function findNearestPatrolIndex(px, py, maxDistPx = 24) {
+        let best = -1,
+          bd = Infinity;
+        for (let i = 0; i < cars.length; i++) {
+          const c = cars[i];
+          if (c.type !== "patrol") continue;
+          const pos = carPosition(c);
+          const d = Math.hypot(pos.x - px, pos.y - py);
+          if (d < bd) {
+            bd = d;
+            best = i;
+          }
+        }
+        return bd <= maxDistPx ? best : -1;
+      }
+
+      /* Startup */
+      scheduleNextSpawn();
+      setTimeout(() => spawnIncident({ manual: true }), 900);
+      setTimeout(() => spawnIncident({ manual: true }), 2200);
+      updateStats();
+      requestAnimationFrame(frame);
+    </script>
+  </body>
+</html>

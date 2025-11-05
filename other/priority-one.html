@@ -2,1069 +2,2135 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>City Dispatcher — Send Units & Manage Incidents</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Priority One — Triage the chaos.</title>
     <style>
       :root {
-        --bg: #0f1115;
-        --panel: #161a22;
-        --muted: #9fb3c8;
-        --text: #e8eef7;
-        --accent: #67e8f9;
-        --danger: #ff6b6b;
-        --ok: #8ef08e;
-        --warn: #ffd166;
-        --card: #10141c;
-        --cardEdge: #1f2531;
-        --shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
-      }
-      * {
-        box-sizing: border-box;
+        --hudH: 112px;
+        --rightW: 340px;
+        --logH: 160px;
       }
       html,
       body {
         height: 100%;
         margin: 0;
-        background: var(--bg);
-        color: var(--text);
+        overflow: hidden;
+        background: #0f1115;
+        color: #e8eef7;
         font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
           Arial;
       }
 
-      /* Layout */
-      .wrap {
-        display: grid;
-        grid-template-rows: auto 1fr auto;
-        height: 100%;
-      }
-      header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        background: linear-gradient(180deg, #121722, #0e121a);
-        border-bottom: 1px solid #202636;
-        box-shadow: var(--shadow);
-        flex-wrap: wrap;
-      }
-      header .pill {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: #0e131d;
-        border: 1px solid #222a39;
-        padding: 8px 12px;
-        border-radius: 999px;
-        font-weight: 600;
-      }
-      header .pill strong {
-        letter-spacing: 0.2px;
-      }
-      header .sep {
-        width: 1px;
-        height: 24px;
-        background: #283144;
-      }
-
-      .main {
-        display: grid;
-        grid-template-columns: 360px 1fr 360px;
-        gap: 12px;
-        padding: 12px;
-      }
-      .panel {
-        background: var(--panel);
-        border: 1px solid #222a39;
-        border-radius: 14px;
-        box-shadow: var(--shadow);
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-      }
-      .panel h2 {
-        margin: 0;
-        padding: 12px 14px;
-        font-size: 14px;
-        letter-spacing: 0.3px;
-        border-bottom: 1px solid #212737;
-        color: var(--muted);
-      }
-      .panel .body {
-        padding: 10px;
-        overflow: auto;
-      }
-
-      /* Incidents list */
-      .incident {
-        background: var(--card);
-        border: 1px solid var(--cardEdge);
-        border-radius: 12px;
-        padding: 10px;
-        margin: 8px 0;
+      /* HUD */
+      #hud {
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: auto;
+        min-height: 64px;
         display: grid;
         grid-template-columns: 1fr auto;
         gap: 8px;
-        cursor: pointer;
+        padding: 8px 12px;
+        background: rgba(12, 14, 20, 0.96);
+        border-bottom: 1px solid #293041;
       }
-      .incident .meta {
-        font-size: 12px;
-        color: var(--muted);
+      #brand {
         display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
+        align-items: center;
+        gap: 10px;
       }
-      .incident .title {
-        font-weight: 700;
+      #brand h1 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 0.4px;
       }
-      .tag {
-        padding: 2px 8px;
-        border-radius: 999px;
-        border: 1px solid #293142;
-        background: #0d121b;
-        font-size: 11px;
-      }
-      .tag.ok {
-        color: var(--ok);
-        border-color: #214826;
-      }
-      .tag.warn {
-        color: var(--warn);
-        border-color: #4a4124;
-      }
-      .tag.bad {
-        color: var(--danger);
-        border-color: #4a2323;
-      }
-      .progress {
-        height: 6px;
-        background: #0c1017;
-        border: 1px solid #222a39;
-        border-radius: 999px;
-        overflow: hidden;
-      }
-      .progress > div {
-        height: 100%;
-        background: linear-gradient(90deg, #67e8f9, #8ef08e);
-        width: 0;
-      }
-      .inc-actions {
+
+      /* Controls */
+      #controls {
         display: flex;
         gap: 6px;
         align-items: center;
+        flex-wrap: wrap;
       }
       .btn {
-        padding: 8px 10px;
-        border-radius: 10px;
-        border: 1px solid #283142;
-        background: #0e141e;
-        color: var(--text);
+        background: #1a2438;
+        color: #d8e6ff;
+        border: 1px solid #314162;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
         cursor: pointer;
-        font-weight: 600;
       }
       .btn:hover {
-        filter: brightness(1.2);
-      }
-      .btn.primary {
-        background: linear-gradient(180deg, #1a2434, #131b29);
-        border-color: #2b3650;
+        filter: brightness(1.1);
       }
       .btn.ghost {
-        background: #0d121b;
+        background: #121a2a;
+        border-color: #26324d;
+        color: #b9c8e9;
       }
-      .btn.danger {
-        border-color: #4a2323;
-        background: #1a0f11;
-        color: #ffb3b3;
+      .seg {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        background: #121828;
+        border: 1px solid #26324d;
+        border-radius: 999px;
+        padding: 4px;
       }
-      input[type="number"] {
-        background: #0e141e;
-        border: 1px solid #283142;
-        color: var(--text);
-        border-radius: 8px;
-        padding: 6px 8px;
-        width: 70px;
+      .seg button {
+        border-radius: 999px;
+        padding: 6px 10px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: #b9c8e9;
+        cursor: pointer;
+      }
+      .seg button.active {
+        background: #1e2b48;
+        border-color: #38507b;
+        color: #e8f0ff;
       }
 
-      /* Missions & Patrols */
-      .mission,
-      .patrol {
-        background: #0f1520;
-        border: 1px solid #273046;
-        border-radius: 12px;
+      /* Stats pills */
+      #statsWrap {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      #stats {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: max-content;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+      .pill {
+        background: #172032;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid #2a3550;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      /* Map & panels */
+      #wrap {
+        position: absolute;
+        inset: var(--hudH) var(--rightW) var(--logH) 0;
+        display: grid;
+        place-items: center;
+      }
+      #mapCanvas {
+        width: 100%;
+        height: 100%;
+        border: 1px solid #2a2f3a;
+        background: #0b0e14;
+        border-radius: 10px;
+      }
+
+      #callPanel {
+        position: absolute;
+        top: var(--hudH);
+        right: 0;
+        bottom: var(--logH);
+        width: var(--rightW);
+        background: rgba(12, 14, 20, 0.97);
+        border-left: 1px solid #293041;
         padding: 10px;
-        margin: 8px 0;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      #callPanel h2 {
+        margin: 6px 4px 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #b6c3dd;
+      }
+      .call {
+        border: 1px solid #33405a;
+        background: #141a28;
+        border-radius: 10px;
+        padding: 10px;
+        animation: ring 1.2s ease-in-out 2;
+      }
+      @keyframes ring {
+        0% {
+          box-shadow: 0 0 0 0 rgba(255, 70, 70, 0.35);
+        }
+        70% {
+          box-shadow: 0 0 0 8px rgba(255, 70, 70, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(255, 70, 70, 0);
+        }
+      }
+      .callHeader {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      .badge {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid #3a4764;
+        background: #182036;
+        color: #cfe3ff;
+      }
+      .sev1 {
+        background: #10331e;
+        border-color: #1f5a33;
+        color: #c3f7cf;
+      }
+      .sev2 {
+        background: #3a2b11;
+        border-color: #6b5218;
+        color: #ffe2ab;
+      }
+      .sev3 {
+        background: #3b1414;
+        border-color: #7a2929;
+        color: #ffb9b9;
+      }
+      .sev4 {
+        background: #4d0f0f;
+        border-color: #9b1f1f;
+        color: #ffd1d1;
+      }
+      .callTitle {
+        font-size: 13px;
+        color: #e8eef7;
+        margin: 0;
+      }
+      .callDesc {
+        font-size: 12px;
+        color: #b7c3dc;
+        margin: 6px 0 8px;
+        line-height: 1.3;
+      }
+      .callActions {
+        display: flex;
+        gap: 8px;
+      }
+
+      /* Log */
+      #log {
+        position: absolute;
+        inset: auto 0 0 0;
+        height: var(--logH);
+        overflow-y: auto;
+        padding: 8px 12px;
+        background: rgba(12, 14, 20, 0.97);
+        border-top: 1px solid #293041;
+        font-size: 13px;
+      }
+      #log p {
+        margin: 4px 0;
+      }
+
+      /* Dispatch popup */
+      #dispatchPopup {
+        position: absolute;
+        display: none;
+        z-index: 20;
+        transform: translate(-50%, -100%);
+      }
+      .popupCard {
+        min-width: 240px;
+        background: #131a29;
+        border: 1px solid #3a4764;
+        border-radius: 10px;
+        padding: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      }
+      .popupTitle {
+        font-size: 13px;
+        margin: 0 0 6px;
+        color: #e8eef7;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 6px 0;
+      }
+      .num {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .nbtn {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 1px solid #41527a;
+        background: #162139;
+        color: #d8e6ff;
+        cursor: pointer;
+      }
+      .nbox {
+        width: 48px;
+        text-align: center;
+        padding: 4px 6px;
+        background: #0f1626;
+        color: #e8eef7;
+        border: 1px solid #374a73;
+        border-radius: 6px;
+      }
+      .popupActions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
       }
       .small {
         font-size: 12px;
-        color: var(--muted);
+        color: #9fb1d1;
       }
 
-      /* Footer log */
-      footer {
-        border-top: 1px solid #202636;
-        background: #0f141e;
-      }
-      #log {
-        height: 120px;
-        overflow: auto;
-        padding: 10px;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-          "Liberation Mono", "Courier New", monospace;
+      /* Patrol hint */
+      #hint {
+        position: absolute;
+        left: 12px;
+        top: calc(var(--hudH) + 8px);
+        background: rgba(20, 24, 34, 0.92);
+        border: 1px solid #2a2f3a;
+        border-radius: 8px;
+        padding: 8px 10px;
         font-size: 12px;
-      }
-      #log .line {
-        padding: 2px 0;
-        color: #b8c6d9;
-      }
-      #log .good {
-        color: #90f39a;
-      }
-      #log .bad {
-        color: #ffa8a8;
-      }
-      #log .warn {
-        color: #ffe08a;
+        color: #b6c3dd;
       }
 
-      /* Speed controls */
-      .speed {
+      /* Shop overlay */
+      #shopOverlay {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: var(--logH);
+        background: rgba(5, 7, 12, 0.78);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+      }
+      #shop {
+        width: min(980px, 92vw);
+        max-height: 80vh;
+        overflow: auto;
+        background: #0f1524;
+        border: 1px solid #33405a;
+        border-radius: 16px;
+        padding: 16px;
         display: flex;
-        gap: 6px;
+        gap: 14px;
+        flex-wrap: wrap;
       }
-      .speed .btn {
+      #shop h2 {
+        margin: 0 0 10px;
+        font-size: 16px;
+        color: #cfe3ff;
+      }
+      .shopHeader {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      .shopCard {
+        flex: 1 1 300px;
+        border: 1px solid #33405a;
+        background: #141a28;
+        border-radius: 12px;
+        padding: 12px;
+      }
+      .shopRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .closeX {
+        background: #1a2438;
+        border: 1px solid #314162;
+        color: #dfe7ff;
+        border-radius: 8px;
         padding: 6px 10px;
+        cursor: pointer;
       }
 
-      /* Shop modal (no blur, full screen) */
+      /* Overlays (win/lose) */
       .overlay {
         position: fixed;
         inset: 0;
+        background: rgba(8, 10, 16, 0.86);
         display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 60;
       }
-      .overlay.show {
-        display: block;
+      .overlayCard {
+        background: #12182a;
+        border: 1px solid #3a4764;
+        border-radius: 16px;
+        padding: 18px;
+        width: min(560px, 92vw);
       }
-      .shop {
-        position: absolute;
-        inset: 0;
-        background: rgba(5, 8, 13, 0.96);
-        border-top: 1px solid #202636;
-        display: grid;
-        grid-template-rows: auto 1fr;
+      .overlay h2 {
+        margin: 0 0 8px;
+        color: #e8eef7;
       }
-      .shop header {
-        border: 0;
-        box-shadow: none;
-        background: transparent;
-        padding: 16px;
-      }
-      .shop .content {
-        padding: 16px;
-        display: grid;
-        gap: 12px;
-        grid-template-columns: repeat(3, 1fr);
-      }
-      .shop .card {
-        background: #0f1520;
-        border: 1px solid #273046;
-        border-radius: 14px;
-        padding: 14px;
+      .overlay p {
+        margin: 6px 0;
+        color: #c9d6f3;
       }
 
-      @media (max-width: 1100px) {
-        .main {
-          grid-template-columns: 1fr;
-          grid-auto-rows: minmax(0, auto);
+      @media (max-width: 980px) {
+        :root {
+          --hudH: 172px;
+          --rightW: 0px;
+          --logH: 180px;
         }
-        .shop .content {
-          grid-template-columns: 1fr;
+        #wrap {
+          inset: var(--hudH) 0 var(--logH) 0;
+        }
+        #callPanel {
+          position: fixed;
+          width: 100%;
+          height: 220px;
+          top: auto;
+          bottom: var(--logH);
+          left: 0;
+          right: 0;
+          border-left: 0;
+          border-top: 1px solid #293041;
+        }
+        #hint {
+          top: calc(var(--hudH) + 8px);
+        }
+        #shopOverlay {
+          bottom: var(--logH);
         }
       }
     </style>
   </head>
   <body>
-    <div class="wrap">
-      <header>
-        <div class="pill" title="Available officers">
-          <strong>👮 Officers:</strong> <span id="officers">0</span>
+    <div id="hud">
+      <div id="brand"><h1>Priority One</h1></div>
+      <div id="controls">
+        <div class="seg" id="speedSeg">
+          <button data-speed="1" class="active">1×</button>
+          <button data-speed="2">2×</button>
+          <button data-speed="4">4×</button>
         </div>
-        <div class="pill" title="Cash on hand">
-          <strong>💵 Money:</strong> $<span id="money">0</span>
-        </div>
-        <div class="pill" title="Public reputation">
-          <strong>⭐ Rep:</strong> <span id="rep">0</span>
-        </div>
-        <div class="pill" title="Day / Payroll">
-          <strong>🗓️ Day:</strong> <span id="day">1</span>
-        </div>
-        <div class="sep"></div>
-        <div class="speed">
-          <button class="btn" id="pauseBtn">⏸️ Pause</button>
-          <button class="btn" data-speed="1">▶️ 1x</button>
-          <button class="btn" data-speed="2">⏩ 2x</button>
-          <button class="btn" data-speed="4">⏭️ 4x</button>
-        </div>
-        <div
-          style="margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap"
-        >
-          <button class="btn ghost" id="spawnBtn" title="Force a new incident">
-            ➕ New Incident
-          </button>
-          <button class="btn primary" id="shopBtn" title="Open shop & upgrades">
-            🏬 Shop
-          </button>
-        </div>
-      </header>
-
-      <div class="main">
-        <section class="panel" id="incidentsPanel">
-          <h2>Active Incidents</h2>
-          <div class="body" id="incidents"></div>
-        </section>
-
-        <section class="panel">
-          <h2>Dispatch Center</h2>
-          <div class="body">
-            <div class="small" style="margin-bottom: 8px">
-              Click an incident to pause time and prepare dispatch.
-            </div>
-            <div id="selectedArea" class="small">No incident selected.</div>
-            <div
-              id="dispatchControls"
-              style="
-                display: none;
-                margin-top: 10px;
-                display: grid;
-                grid-template-columns: 1fr auto;
-                gap: 8px;
-                align-items: center;
-              "
-            >
-              <div style="display: flex; gap: 8px; align-items: center">
-                <label for="sendCount">Send</label>
-                <input id="sendCount" type="number" min="1" value="1" />
-                <button class="btn" id="fillReqBtn" title="Fill requirement">
-                  Fill Req
-                </button>
-                <button
-                  class="btn"
-                  id="maxBtn"
-                  title="Send as many as available"
-                >
-                  Max
-                </button>
-              </div>
-              <div class="inc-actions">
-                <button class="btn primary" id="dispatchBtn">Dispatch</button>
-                <button class="btn ghost" id="clearBtn">Clear</button>
-              </div>
-            </div>
-
-            <hr
-              style="border: 0; border-top: 1px solid #212737; margin: 14px 0"
-            />
-            <h3 style="margin: 6px 0 0 0; font-size: 14px; color: var(--muted)">
-              Units On Mission
-            </h3>
-            <div id="missions"></div>
-
-            <hr
-              style="border: 0; border-top: 1px solid #212737; margin: 14px 0"
-            />
-            <div style="display: flex; align-items: center; gap: 8px">
-              <button class="btn" id="addPatrolBtn">
-                ➕ New Patrol (1 officer)
-              </button>
-            </div>
-            <div id="patrols"></div>
-          </div>
-        </section>
-
-        <section class="panel">
-          <h2>City Stats</h2>
-          <div class="body">
-            <div class="small">
-              Incidents handled: <span id="handled">0</span>
-            </div>
-            <div class="small">Failures: <span id="failed">0</span></div>
-            <div class="small">Officers lost: <span id="lost">0</span></div>
-            <div class="small">
-              Spawn interval: <span id="spawnInfo">—</span>
-            </div>
-            <div class="small">
-              Patrol bonus: <span id="patrolBonus">0%</span>
-            </div>
-            <div class="small">
-              Payroll / day: $<span id="payroll">0</span> (first 3 free)
-            </div>
-            <hr
-              style="border: 0; border-top: 1px solid #212737; margin: 12px 0"
-            />
-            <div class="small">
-              Tips:
-              <ul>
-                <li>
-                  Selecting an incident pauses time. Dispatch or Clear to
-                  resume.
-                </li>
-                <li>
-                  If an incident spawns while at >1x, speed resets to 1x so you
-                  can react.
-                </li>
-                <li>Unpaid payroll → officers may quit.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
+        <button class="btn ghost" id="patrolModeBtn">🚶 Patrol: Off</button>
+        <button class="btn ghost" id="removePatrolBtn">
+          🗑️ Remove Patrol: Off
+        </button>
+        <button class="btn ghost" id="drillBtn">🎯 Drill Call</button>
+        <button class="btn ghost" id="intelBtn">🛰️ Intel Sweep</button>
+        <button class="btn ghost" id="autoBtn">⚡ Auto-Dispatch: Off</button>
+        <button class="btn" id="shopBtn">🏪 Shop</button>
       </div>
 
-      <footer>
-        <div id="log"></div>
-      </footer>
+      <div id="statsWrap">
+        <div id="stats">
+          <div class="pill">Level: <span id="level">1</span></div>
+          <div class="pill">Day: <span id="day">1</span></div>
+          <div class="pill">Officers: <span id="officers">4</span></div>
+          <div class="pill">Busy: <span id="busy">0</span></div>
+          <div class="pill">KIA: <span id="kia">0</span></div>
+          <div class="pill">Reputation: <span id="rep">100</span></div>
+          <div class="pill">Funds: $<span id="funds">0</span></div>
+          <div class="pill">Clock: <span id="clock">12:00</span></div>
+        </div>
+      </div>
     </div>
 
-    <!-- SHOP OVERLAY -->
-    <div class="overlay" id="shopOverlay" aria-hidden="true">
-      <div class="shop">
-        <header>
-          <div
-            style="display: flex; gap: 12px; align-items: center; width: 100%"
-          >
-            <div class="pill"><strong>🏬 Shop</strong></div>
-            <div class="pill">
-              <strong>💵</strong> $<span id="shopMoney">0</span>
-            </div>
-            <div class="pill">
-              <strong>👮</strong> <span id="shopOfficers">0</span>
-            </div>
-            <button class="btn" id="closeShop" style="margin-left: auto">
-              Close
-            </button>
-          </div>
-        </header>
-        <div class="content">
-          <div class="card">
-            <h3 style="margin: 0 0 6px">Hire Officers</h3>
-            <div class="small">
-              Cost: $150 each • Daily salary: $20 (first 3 officers free)
-            </div>
-            <div style="display: flex; gap: 8px; margin-top: 8px">
-              <input id="hireCount" type="number" min="1" value="1" />
-              <button class="btn primary" id="hireBtn">Hire</button>
-            </div>
-            <div id="hireMsg" class="small" style="margin-top: 6px"></div>
-          </div>
+    <div id="wrap"><canvas id="mapCanvas"></canvas></div>
 
-          <div class="card">
-            <h3 style="margin: 0 0 6px">Training Drill</h3>
-            <div class="small">
-              Assign 1 officer for 20s to gain +5% success for 90s. Cost $60.
-            </div>
-            <button class="btn" id="startDrillBtn">Start Drill</button>
-            <div class="small" id="drillStatus" style="margin-top: 6px">
-              No drill active.
-            </div>
-          </div>
+    <aside id="callPanel">
+      <h2>📞 Incoming Calls</h2>
+      <div id="callList"></div>
+    </aside>
 
-          <div class="card">
-            <h3 style="margin: 0 0 6px">City Funding</h3>
-            <div class="small">
-              Every 5 in-game days you receive $250 base funding.
+    <div id="dispatchPopup">
+      <div class="popupCard">
+        <p class="popupTitle">
+          Dispatch to <span id="dpIncidentId">#0</span> (sev
+          <span id="dpSev">0</span>)
+        </p>
+        <div class="row">
+          <span class="small">Recommended:</span>
+          <strong id="dpRecommended">0</strong>
+        </div>
+        <div class="row">
+          <span class="small">Send officers:</span>
+          <div class="num">
+            <button class="nbtn" id="dpMinus">−</button>
+            <input class="nbox" id="dpCount" type="number" min="1" value="1" />
+            <button class="nbtn" id="dpPlus">+</button>
+          </div>
+          <span class="small">Avail: <strong id="dpAvail">0</strong></span>
+        </div>
+        <div class="popupActions">
+          <button class="btn" id="dpQuick">Send Recommended (Q)</button>
+          <button class="btn" id="dpConfirm">Send</button>
+          <button class="btn ghost" id="dpCancel">Cancel (Esc)</button>
+        </div>
+        <p class="small">
+          Tip: Shift+Click an incident circle to quick-send recommended.
+        </p>
+      </div>
+    </div>
+
+    <div id="hint" style="display: none">
+      Patrol mode: click two places on the map to set a route. (Consumes 1
+      officer.) Use “🗑️ Remove Patrol” to delete one.
+    </div>
+    <div id="log"></div>
+
+    <!-- Shop -->
+    <div id="shopOverlay" aria-modal="true" role="dialog">
+      <div id="shop">
+        <div class="shopHeader">
+          <h2>🏪 City Shop</h2>
+          <button class="closeX" id="shopClose">Close (Esc)</button>
+        </div>
+        <div class="shopCard">
+          <h3>Hire Officers</h3>
+          <div class="small">
+            Free roster slots: <span id="freeSlots">0</span> (first
+            <strong id="freeBaseOut">3</strong> are free daily)
+          </div>
+          <div class="shopRow">
+            <div>
+              <div class="small">
+                Hire cost: $<span id="hireCostOut">120</span>
+              </div>
+              <div class="small">
+                Daily salary (each beyond free): $<span id="salaryOut">18</span>
+              </div>
             </div>
-            <div class="small">Current day: <span id="shopDay">1</span></div>
+            <div><button class="btn" id="hire1">+1 Officer</button></div>
           </div>
         </div>
+        <div class="shopCard">
+          <h3>City Grants</h3>
+          <div class="small">
+            Recurring every <span id="grantDaysOut">5</span> in-game days.
+          </div>
+          <div class="small">Amount: $<span id="grantAmtOut">300</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Win / Lose -->
+    <div class="overlay" id="loseOverlay">
+      <div class="overlayCard">
+        <h2>Game Over — Reputation Collapsed</h2>
+        <p>
+          Your reputation dropped to zero. The city council has removed you from
+          command.
+        </p>
+        <p>
+          <button class="btn" id="restartLose">🔁 Restart</button>
+          <button class="btn ghost" id="continueLose">❌ Close</button>
+        </p>
+        <p class="small">
+          Tip: Don’t undersend on high-severity calls; patrols boost success
+          near routes.
+        </p>
+      </div>
+    </div>
+    <div class="overlay" id="winOverlay">
+      <div class="overlayCard">
+        <h2>Victory — Priority One</h2>
+        <p>
+          You maintained order for 7 in-game days with a reputation of 180+.
+        </p>
+        <p>
+          <button class="btn" id="restartWin">🔁 Play Again</button>
+          <button class="btn ghost" id="continueWin">❌ Close</button>
+        </p>
+        <p class="small">Challenge: Try “No Auto-Dispatch” hard mode.</p>
       </div>
     </div>
 
     <script>
-      (function () {
-        // ---------- GAME STATE ----------
-        const state = {
-          money: 500,
-          reputation: 0,
-          officersTotal: 5,
-          officersFree: 5,
-          baseFree: 3, // first N officers don't draw salary
-          salaryPerOfficer: 20, // per day, beyond baseFree
-          day: 1,
-          msPerDay: 60000, // 60s = 1 in-game day
-          nextDayAt: Date.now() + 60000,
-          nextFundingDay: 6, // receive funding on days divisible by 5 (next is 6 because day starts at 1)
-          spawnMin: 7000,
-          spawnMax: 14000,
-          speed: 1, // time multiplier
-          paused: false,
-          incidents: [], // {id,title,severity,required,expiresAt,createdAt,reward,penalty}
-          missions: [], // {id,incidentId,units,resolveAt}
-          patrols: [], // {id, units:1}
-          selectedId: null,
-          counters: { handled: 0, failed: 0, lost: 0 },
-          nextIncidentId: 1,
-          // drill buff
-          drillBuff: { active: false, until: 0 },
-        };
+      /* ============================================================
+         GAME STATE
+      ============================================================ */
+      let level = 1,
+        officers = 4,
+        busy = 0,
+        reputation = 100,
+        funds = 150, // start with a small budget so you can hire immediately
+        kia = 0;
 
-        // ---------- HELPERS ----------
-        const $ = (sel) => document.querySelector(sel);
-        const elIncidents = $("#incidents");
-        const elMissions = $("#missions");
-        const elPatrols = $("#patrols");
-        const elLog = $("#log");
+      /* Economy */
+      const ECON = {
+        baseFreeOfficers: 3,
+        hireCost: 120,
+        salaryPerOfficerPerDay: 18,
+        grantEveryDays: 5,
+        grantAmount: 300,
+      };
 
-        function log(msg, cls = "") {
-          const line = document.createElement("div");
-          line.className = "line " + cls;
-          line.textContent = msg;
-          elLog.appendChild(line);
-          elLog.scrollTop = elLog.scrollHeight;
-        }
-        function fmtTime(ms) {
-          const s = Math.max(0, Math.ceil(ms / 1000));
-          return s + "s";
-        }
-        function between(min, max) {
-          return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
-        function pick(arr) {
-          return arr[Math.floor(Math.random() * arr.length)];
-        }
+      /* Pause/time */
+      const GAME = {
+        paused: false,
+        pauseStarted: 0,
+        pauseFrozen: 0,
+        totalPaused: 0,
+        autoDispatch: false,
+      };
+      function pauseGame() {
+        if (GAME.paused) return;
+        GAME.paused = true;
+        GAME.pauseStarted = performance.now();
+        GAME.pauseFrozen = performance.now();
+        log("⏸️ Game paused.", "#b9c8e9");
+      }
+      function resumeGame() {
+        if (!GAME.paused) return;
+        const pausedFor = performance.now() - GAME.pauseStarted;
+        GAME.totalPaused += pausedFor;
+        GAME.paused = false;
+        log("▶️ Game resumed.", "#b9c8e9");
+      }
+      function nowMs() {
+        return GAME.paused ? GAME.pauseFrozen : performance.now();
+      }
 
-        // ---------- UI UPDATE ----------
-        function renderHUD() {
-          $("#officers").textContent =
-            state.officersFree + " / " + state.officersTotal;
-          $("#money").textContent = state.money.toFixed(0);
-          $("#rep").textContent = state.reputation.toFixed(0);
-          $("#handled").textContent = state.counters.handled;
-          $("#failed").textContent = state.counters.failed;
-          $("#lost").textContent = state.counters.lost;
-          $("#spawnInfo").textContent =
-            state.spawnMin / 1000 + "–" + state.spawnMax / 1000 + "s";
-          $("#day").textContent = state.day;
-          $("#patrolBonus").textContent =
-            Math.round(getPatrolBonus() * 100) + "%";
-          $("#payroll").textContent = getDailyPayroll();
-        }
+      /* Time & speed */
+      const SPEED = { mult: 1 };
+      const CLOCK = { start: nowMs(), baseSpeed: 120 };
+      function simHour() {
+        const t =
+          ((nowMs() - CLOCK.start) / 1000) * CLOCK.baseSpeed * SPEED.mult;
+        let h = Math.floor((t / 3600) % 24);
+        if (h < 0) h += 24;
+        return h;
+      }
+      function fmtClock() {
+        const t =
+          ((nowMs() - CLOCK.start) / 1000) * CLOCK.baseSpeed * SPEED.mult;
+        let h = Math.floor((t / 3600) % 24),
+          m = Math.floor((t % 3600) / 60);
+        const ampm = h >= 12 ? "PM" : "AM";
+        let hh = h % 12;
+        if (hh === 0) hh = 12;
+        return `${hh}:${String(m).padStart(2, "0")} ${ampm}`;
+      }
+      function simPerReal() {
+        return CLOCK.baseSpeed * SPEED.mult;
+      }
+      function simNowMin() {
+        return (((nowMs() - CLOCK.start) / 1000) * simPerReal()) / 60;
+      }
+      function simNowDays() {
+        return (
+          (((nowMs() - CLOCK.start) / 1000) * simPerReal()) / (60 * 60 * 24)
+        );
+      }
+      let lastPayrollDay = 0,
+        nextGrantDay = ECON.grantEveryDays,
+        lastDayShown = 1;
 
-        function tagBySeverity(s) {
-          if (s <= 2) return '<span class="tag ok">Low</span>';
-          if (s === 3) return '<span class="tag warn">Medium</span>';
-          return '<span class="tag bad">High</span>';
-        }
+      /* Canvas */
+      const canvas = document.getElementById("mapCanvas");
+      const ctx = canvas.getContext("2d", { alpha: false });
+      function fitCanvas() {
+        const r = canvas.getBoundingClientRect();
+        canvas.width = Math.floor(r.width * devicePixelRatio);
+        canvas.height = Math.floor(r.height * devicePixelRatio);
+        ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+      }
+      window.addEventListener("resize", fitCanvas);
+      fitCanvas();
 
-        function renderIncidents() {
-          elIncidents.innerHTML = "";
-          const now = Date.now();
-          state.incidents.sort((a, b) => a.expiresAt - b.expiresAt);
-          state.incidents.forEach((inc) => {
-            const card = document.createElement("div");
-            card.className = "incident";
-            card.dataset.id = inc.id;
-            const left = document.createElement("div");
-            const right = document.createElement("div");
-            right.className = "inc-actions";
+      /* Log */
+      const logBox = document.getElementById("log");
+      function log(msg, color = "#cfe3ff") {
+        const p = document.createElement("p");
+        p.textContent = msg;
+        p.style.color = color;
+        logBox.prepend(p);
+      }
 
-            left.innerHTML = `
-        <div class="title">${inc.title}</div>
-        <div class="meta">
-          ${tagBySeverity(inc.severity)}
-          <span class="tag">Req: ${inc.required}</span>
-          <span class="tag">Reward: $${inc.reward}</span>
-          <span class="tag">Penalty: $${inc.penalty}</span>
-          <span class="tag">Time: <b>${fmtTime(inc.expiresAt - now)}</b></span>
-        </div>
-        <div class="progress" title="Time remaining"><div style="width:${
-          (100 * (inc.expiresAt - now)) / (inc.expiresAt - inc.createdAt)
-        }%"></div></div>
-      `;
+      /* Graph (map) */
+      const nodes = [
+        { id: 0, x: 0.08, y: 0.85 },
+        { id: 1, x: 0.2, y: 0.82 },
+        { id: 2, x: 0.35, y: 0.78 },
+        { id: 3, x: 0.5, y: 0.74 },
+        { id: 4, x: 0.65, y: 0.7 },
+        { id: 5, x: 0.8, y: 0.66 },
+        { id: 6, x: 0.08, y: 0.6 },
+        { id: 7, x: 0.2, y: 0.57 },
+        { id: 8, x: 0.35, y: 0.54 },
+        { id: 9, x: 0.5, y: 0.51 },
+        { id: 10, x: 0.65, y: 0.48 },
+        { id: 11, x: 0.8, y: 0.45 },
+        { id: 12, x: 0.08, y: 0.35 },
+        { id: 13, x: 0.2, y: 0.33 },
+        { id: 14, x: 0.35, y: 0.31 },
+        { id: 15, x: 0.5, y: 0.29 },
+        { id: 16, x: 0.65, y: 0.27 },
+        { id: 17, x: 0.8, y: 0.25 },
+        { id: 18, x: 0.08, y: 0.12 },
+        { id: 19, x: 0.2, y: 0.12 },
+        { id: 20, x: 0.35, y: 0.12 },
+        { id: 21, x: 0.5, y: 0.12 },
+        { id: 22, x: 0.65, y: 0.12 },
+        { id: 23, x: 0.8, y: 0.12 },
+      ];
+      function h(i, j) {
+        return [i, j];
+      }
+      const edges = [
+        h(0, 1),
+        h(1, 2),
+        h(2, 3),
+        h(3, 4),
+        h(4, 5),
+        h(6, 7),
+        h(7, 8),
+        h(8, 9),
+        h(9, 10),
+        h(10, 11),
+        h(12, 13),
+        h(13, 14),
+        h(14, 15),
+        h(15, 16),
+        h(16, 17),
+        h(18, 19),
+        h(19, 20),
+        h(20, 21),
+        h(21, 22),
+        h(22, 23),
+        h(0, 6),
+        h(6, 12),
+        h(12, 18),
+        h(1, 7),
+        h(7, 13),
+        h(13, 19),
+        h(2, 8),
+        h(8, 14),
+        h(14, 20),
+        h(3, 9),
+        h(9, 15),
+        h(15, 21),
+        h(4, 10),
+        h(10, 16),
+        h(16, 22),
+        h(5, 11),
+        h(11, 17),
+        h(17, 23),
+        h(1, 8),
+        h(8, 15),
+        h(2, 9),
+        h(9, 16),
+        h(7, 14),
+        h(14, 21),
+        h(6, 13),
+        h(13, 20),
+      ];
+      const adj = new Map();
+      function ndist(a, b) {
+        const dx = a.x - b.x,
+          dy = a.y - b.y;
+        return Math.hypot(dx, dy);
+      }
+      for (const [a, b] of edges) {
+        if (!adj.has(a)) adj.set(a, []);
+        if (!adj.has(b)) adj.set(b, []);
+        const w = ndist(nodes[a], nodes[b]);
+        adj.get(a).push({ to: b, w });
+        adj.get(b).push({ to: a, w });
+      }
+      const BASE_NODE = 1;
 
-            const selBtn = document.createElement("button");
-            selBtn.className = "btn";
-            selBtn.textContent = "Select";
-            selBtn.onclick = (e) => {
-              e.stopPropagation();
-              selectIncident(inc.id, true);
-            };
-            right.appendChild(selBtn);
+      /* Stats */
+      const stats = {
+        speedPxPerSec: 120,
+        resolveMsBySeverity: [0, 2600, 3800, 5200, 7000],
+        failPenaltyBySeverity: [0, 5, 5, 6, 8],
+        payoutBySeverity: [0, 22, 36, 58, 90],
+        congestionMin: 0.84,
+        congestionMax: 0.96,
+      };
 
-            card.appendChild(left);
-            card.appendChild(right);
-            card.addEventListener("click", () => selectIncident(inc.id, true));
-            elIncidents.appendChild(card);
-          });
-        }
+      let incidents = [];
+      let cars = [];
+      let calls = [];
+      let highlightPing = null;
+      let nextIncidentId = 1,
+        nextCarId = 1,
+        nextCallId = 1;
 
-        function renderMissions() {
-          elMissions.innerHTML = "";
-          const now = Date.now();
-          state.missions.forEach((m) => {
-            const inc =
-              state.incidents.find((i) => i.id === m.incidentId) || m._snapshot;
-            const div = document.createElement("div");
-            div.className = "mission";
-            const remaining = m.resolveAt - now;
-            div.innerHTML = `
-        <div><strong>${inc ? inc.title : "Mission"}</strong> — units: <b>${
-              m.units
-            }</b></div>
-        <div class="small">ETA: ${fmtTime(remaining)} | Severity: ${
-              inc ? inc.severity : "?"
-            } | Req: ${inc ? inc.required : "?"}</div>
-        <div class="progress"><div style="width:${Math.max(
-          0,
-          100 * (1 - remaining / m.duration)
-        )}%"></div></div>
-      `;
-            elMissions.appendChild(div);
-          });
-        }
+      /* Spawning scaled by rep */
+      const hotspots = [8, 9, 14, 15, 16, 2, 3, 4];
+      function weightedSeverity() {
+        const rb = clamp((reputation - 100) / 120, -0.5, 1);
+        let p4 = 0.01 + Math.max(0, rb) * 0.09;
+        let p3 = 0.15 + Math.max(0, rb) * 0.2 - Math.max(0, -rb) * 0.05;
+        let p2 = 0.25 + rb * 0.05;
+        let p1 = 1 - (p2 + p3 + p4);
+        p1 = clamp(p1, 0.1, 0.9);
+        if (Math.random() < 0.02) return 4; // rare spike
+        const r = Math.random();
+        if (r < p1) return 1;
+        if (r < p1 + p2) return 2;
+        if (r < p1 + p2 + p3) return 3;
+        return 4;
+      }
+      function ttlBySeverity(sev) {
+        return (
+          (sev === 1 ? 14000 : sev === 2 ? 11000 : sev === 3 ? 9000 : 8000) /
+          Math.max(0.001, SPEED.mult)
+        );
+      }
+      function pickSpawnNode() {
+        if (Math.random() < 0.7)
+          return hotspots[Math.floor(Math.random() * hotspots.length)];
+        let n;
+        do {
+          n = Math.floor(Math.random() * nodes.length);
+        } while (n === BASE_NODE);
+        return n;
+      }
 
-        function renderPatrols() {
-          elPatrols.innerHTML = "";
-          if (state.patrols.length === 0) {
-            const p = document.createElement("div");
-            p.className = "small";
-            p.textContent = "No patrols active.";
-            elPatrols.appendChild(p);
-            return;
-          }
-          state.patrols.forEach((pat) => {
-            const div = document.createElement("div");
-            div.className = "patrol";
-            div.innerHTML = `<strong>Patrol #${pat.id}</strong> — Units: ${pat.units}
-        <div class="small">Provides small success boost. Removing returns officers.</div>
-        <div style="margin-top:6px"><button class="btn danger" data-pid="${pat.id}">Remove patrol</button></div>`;
-            div.querySelector("button").onclick = () => removePatrol(pat.id);
-            elPatrols.appendChild(div);
-          });
-        }
+      const SPAWN = {
+        baseCallsPerHour: [
+          0.4, 0.35, 0.3, 0.3, 0.32, 0.45, 0.7, 0.9, 1.1, 1.3, 1.5, 1.6, 1.8,
+          2.0, 2.2, 2.3, 2.1, 1.8, 1.4, 1.2, 0.9, 0.7, 0.6, 0.5,
+        ],
+        burstMult: 1.8,
+        burstStartByHour: [
+          0.006, 0.006, 0.004, 0.004, 0.005, 0.007, 0.01, 0.012, 0.014, 0.016,
+          0.018, 0.02, 0.022, 0.024, 0.024, 0.022, 0.018, 0.014, 0.012, 0.01,
+          0.008, 0.007, 0.006, 0.006,
+        ],
+        burstDurMin: 1.5,
+        burstDurMax: 3.0,
+        lullChance: 0.1,
+        lullMult: 0.5,
+        lullDurMin: 1.5,
+        lullDurMax: 3.0,
+        minGapSimMin: 0.7,
+        nearCapScalePerIncident: 0.18,
+        jitter: 0.25,
+      };
+      const SPAWN_STATE = {
+        lastSpawnSimMin: 0,
+        burstUntilSimMin: 0,
+        lullUntilSimMin: 0,
+      };
+      function callsPerHourFor(h) {
+        return SPAWN.baseCallsPerHour[((h % 24) + 24) % 24] || 0.6;
+      }
+      function dynamicMaxActive() {
+        const avail = Math.max(0, officers - busy);
+        return Math.max(2, 3 + Math.floor(level / 3) + Math.floor(avail / 4));
+      }
 
-        function selectIncident(id, pause) {
-          state.selectedId = id;
-          const inc = state.incidents.find((i) => i.id === id);
-          const area = $("#selectedArea");
-          if (!inc) {
-            area.textContent = "No incident selected.";
-            $("#dispatchControls").style.display = "none";
-            return;
-          }
-          area.innerHTML = `<strong>${inc.title}</strong> — ${tagBySeverity(
-            inc.severity
-          )} | Req <b>${inc.required}</b> | Time left <b>${fmtTime(
-            inc.expiresAt - Date.now()
-          )}</b>`;
-          $("#dispatchControls").style.display = "grid";
-          $("#sendCount").value = Math.min(inc.required, state.officersFree);
-          if (pause) {
-            state.paused = true;
-            $("#pauseBtn").textContent = "▶️ Resume";
-            log(`⏸️ Paused to handle #${inc.id}.`, "warn");
-          }
-        }
-
-        // ---------- GAME LOGIC ----------
-        const TITLES = [
-          "Burglary in progress",
-          "Traffic collision",
-          "Disturbance call",
-          "Armed robbery",
-          "Shoplifting",
-          "Street fight",
-          "Noise complaint",
-          "Suspicious person",
-          "Vandalism",
-          "Assault report",
-          "Car theft",
-          "Domestic dispute",
-          "Medical emergency",
-        ];
-
-        function spawnIncident() {
-          const severity = between(1, 5);
-          const required = Math.max(
-            1,
-            Math.min(6, Math.round(severity + Math.random() * 2))
-          );
-          const now = Date.now();
-          const ttl = between(30000, 90000) - severity * 2000; // higher severity, shorter time
-          const reward = 80 + severity * between(40, 90) + required * 25;
-          const penalty = 40 + severity * between(30, 70);
-          const inc = {
-            id: state.nextIncidentId++,
-            title: pick(TITLES),
-            severity,
-            required,
-            createdAt: now,
-            expiresAt: now + ttl,
-            reward,
-            penalty,
-          };
-          state.incidents.push(inc);
-          renderIncidents();
-          log(
-            `📟 New incident #${inc.id}: ${inc.title} (sev ${severity}, req ${required}).`,
-            "warn"
-          );
-          // If player is at >1x speed, reset to 1x and log
-          if (state.speed > 1) {
-            state.speed = 1;
-            log("⏯️ Speed reset to 1x due to new incident.", "warn");
-          }
-        }
-
-        function dispatchSelected() {
-          const inc = state.incidents.find((i) => i.id === state.selectedId);
-          if (!inc) {
-            log("No incident selected.", "warn");
-            return;
-          }
-          const n = Math.max(1, Math.floor(Number($("#sendCount").value || 1)));
-          if (n > state.officersFree) {
-            log("Not enough free officers.", "warn");
-            return;
-          }
-
-          // allocate officers and create mission
-          state.officersFree -= n;
-          const duration = between(8000, 15000) + inc.severity * 2000; // how long until resolution
-          const mission = {
-            id: "m" + crypto.randomUUID(),
-            incidentId: inc.id,
-            units: n,
-            resolveAt: Date.now() + duration,
-            duration,
-            _snapshot: { ...inc },
-          };
-          state.missions.push(mission);
-
-          // remove incident from active list (we're handling it)
-          state.incidents = state.incidents.filter((x) => x.id !== inc.id);
-          state.selectedId = null;
-          renderIncidents();
-          renderMissions();
-          selectIncident(null);
-          state.paused = false;
-          $("#pauseBtn").textContent = "⏸️ Pause";
-          log(`🚓 Dispatched ${n} officer(s) to #${inc.id} (${inc.title}).`);
-        }
-
-        function getPatrolBonus() {
-          // each patrol adds 2.5% (0.025) global success bonus, up to 10%
-          return Math.min(0.1, state.patrols.length * 0.025);
-        }
-
-        function successCalc(m) {
-          const inc = m._snapshot;
-          const ratio = m.units / Math.max(1, inc.required);
-          let base = 0.35 + 0.4 * Math.min(1.4, ratio); // up to ~0.91 cap before penalties
-          base -= (inc.severity - 1) * 0.05; // severity tax
-          base += getPatrolBonus(); // patrol help
-          if (state.drillBuff.active) base += 0.05; // drill boost
-          // time pressure already applied by shorter deadlines; keep bounded strictly
-          base = Math.max(0.05, Math.min(0.95, base));
-          return { ratio, base };
+      function scheduleNextSpawn() {
+        const maxActive = dynamicMaxActive();
+        if (incidents.length >= maxActive) {
+          setTimeout(scheduleNextSpawn, 900);
+          return;
         }
 
-        function resolveMission(m) {
-          // success chance based on ratio and severity
-          const { ratio, base } = successCalc(m);
-          const inc = m._snapshot;
+        const h = simHour();
+        let ratePerHour = callsPerHourFor(h);
 
-          // casualty chance rises if under-staffed & high severity
-          const shortfall = Math.max(0, inc.required - m.units);
-          const casualtyChance = Math.min(
-            0.35,
-            0.03 * inc.severity + 0.06 * shortfall
-          );
-          let lost = 0;
-          for (let i = 0; i < m.units; i++)
-            if (Math.random() < casualtyChance) lost++;
+        const free = Math.max(0, officers - busy);
+        const availability = clamp(
+          0.55 + (free / Math.max(1, officers)) * 0.45,
+          0.55,
+          1.15
+        );
+        ratePerHour *= availability;
 
-          const success = Math.random() < base;
-
-          // Debug console logging for balance tuning
-          console.log("[Mission]", {
-            incident: inc.id,
-            title: inc.title,
-            units: m.units,
-            required: inc.required,
-            ratio,
-            baseChance: base,
-            patrols: state.patrols.length,
-            drill: state.drillBuff.active,
-          });
-
-          state.officersTotal -= lost; // permanently lost
-
-          if (success) {
-            state.money += inc.reward;
-            state.reputation += 1 + Math.max(0, inc.severity - 2) * 0.5;
-            state.counters.handled++;
-            log(
-              `✅ Resolved #${inc.id}: ${inc.title}. +$${inc.reward}${
-                lost ? `, ⚠️ ${lost} officer(s) lost` : ""
-              }`,
-              lost ? "warn" : "good"
-            );
-          } else {
-            state.money -= inc.penalty;
-            state.reputation -= 1 + inc.severity * 0.5;
-            state.counters.failed++;
-            log(
-              `❌ Failed #${inc.id}: ${inc.title}. -$${inc.penalty}${
-                lost ? `, ⚠️ ${lost} officer(s) lost` : ""
-              }`,
-              "bad"
-            );
-          }
-
-          // returning officers who survived
-          const returned = Math.max(0, m.units - lost);
-          state.officersFree += returned;
-          renderHUD();
-        }
-
-        function failExpired(inc) {
-          // time ran out
-          state.money -= inc.penalty;
-          state.reputation -= 1 + inc.severity * 0.5;
-          state.counters.failed++;
-          log(`⌛ Incident #${inc.id} expired. -$${inc.penalty}`, "bad");
-        }
-
-        // ---------- PATROLS ----------
-        function addPatrol() {
-          if (state.officersFree < 1) {
-            log("Need a free officer to start a patrol.", "warn");
-            return;
-          }
-          state.officersFree -= 1;
-          state.patrols.push({ id: state.patrols.length + 1, units: 1 });
-          renderPatrols();
-          renderHUD();
-          log("🚨 Started a new patrol (1 officer).");
-        }
-        function removePatrol(id) {
-          const idx = state.patrols.findIndex((p) => p.id === id);
-          if (idx >= 0) {
-            state.patrols.splice(idx, 1);
-            state.officersFree += 1;
-            renderPatrols();
-            renderHUD();
-            log(`🧭 Removed patrol #${id}.`);
-          }
-        }
-
-        // ---------- ECONOMY ----------
-        function getDailyPayroll() {
-          const paidCount = Math.max(0, state.officersTotal - state.baseFree);
-          return paidCount * state.salaryPerOfficer;
-        }
-
-        function onNewDay() {
-          state.day += 1;
-          // payroll
-          const payroll = getDailyPayroll();
-          state.money -= payroll;
-          if (payroll > 0)
-            log(
-              `📑 Payroll processed: -$${payroll}.`,
-              payroll > state.money ? "warn" : ""
-            );
-
-          // officer quits if money negative after payroll
-          if (state.money < 0 && state.officersTotal > state.baseFree) {
-            const quitting = Math.min(1, state.officersTotal - state.baseFree);
-            state.officersTotal -= quitting;
-            // Prefer to reduce free officers; if none, reduce missions? We'll reduce free.
-            const freeToReduce = Math.min(quitting, state.officersFree);
-            state.officersFree -= freeToReduce;
-            log(`🧑‍✈️ ${quitting} officer quit due to unpaid salary.`, "bad");
-          }
-
-          // funding every 5 days
-          if (state.day % 5 === 0) {
-            state.money += 250;
-            log("🏛️ City funding received: +$250.", "good");
-          }
-
-          renderHUD();
-        }
-
-        // ---------- DRILL ----------
-        function startDrill() {
-          if (state.officersFree < 1) {
-            log("Need 1 free officer for a drill.", "warn");
-            return;
-          }
-          if (state.money < 60) {
-            log("Not enough money for drill.", "warn");
-            return;
-          }
-          state.money -= 60;
-          state.officersFree -= 1;
-          renderHUD();
-          $("#drillStatus").textContent = "Drill in progress (20s)";
-          log("🎯 Drill started: 1 officer assigned for 20s.");
-          const endAt = Date.now() + 20000;
-          const interval = setInterval(() => {
-            const left = endAt - Date.now();
-            if (left <= 0) {
-              clearInterval(interval);
-              state.officersFree += 1;
-              renderHUD();
-              state.drillBuff.active = true;
-              state.drillBuff.until = Date.now() + 90000; // 90s buff
-              $("#drillStatus").textContent =
-                "Buff active: +5% success for 90s";
-              log("🎖️ Drill completed. Temporary +5% success for 90s.", "good");
-            }
-          }, 500);
-        }
-
-        // ---------- LOOP ----------
-        let nextSpawnIn = between(state.spawnMin, state.spawnMax);
-        function loop() {
-          const dtReal = 200; // frame step in ms
-          const dt = dtReal * (state.paused ? 0 : state.speed);
-
-          // spawner
-          nextSpawnIn -= dt;
-          if (nextSpawnIn <= 0) {
-            spawnIncident();
-            const repBoost = Math.max(0, state.reputation);
-            const min = Math.max(4000, state.spawnMin - repBoost * 150);
-            const max = Math.max(7000, state.spawnMax - repBoost * 120);
-            nextSpawnIn = between(min, max);
-          }
-
-          // countdown incidents
-          state.incidents = state.incidents.filter((inc) => {
-            inc.expiresAt -= dt;
-            if (inc.expiresAt <= Date.now()) {
-              failExpired(inc);
-              return false; // remove
-            }
-            return true;
-          });
-
-          // resolve missions
-          const now2 = Date.now();
-          const done = [];
-          state.missions.forEach((m) => {
-            if (now2 >= m.resolveAt) done.push(m);
-          });
-          done.forEach((m) => {
-            resolveMission(m);
-            state.missions = state.missions.filter((x) => x !== m);
-          });
-
-          // day cycle
-          if (!state.paused && Date.now() >= state.nextDayAt) {
-            state.nextDayAt += state.msPerDay;
-            onNewDay();
-          }
-
-          // drill buff expiry
-          if (state.drillBuff.active && Date.now() >= state.drillBuff.until) {
-            state.drillBuff.active = false;
-            $("#drillStatus").textContent = "No drill active.";
-            log("🎖️ Drill buff expired.");
-          }
-
-          // render
-          renderHUD();
-          renderIncidents();
-          renderMissions();
-
-          requestAnimationFrame(loop);
-        }
-
-        // ---------- EVENTS ----------
-        $("#dispatchBtn").onclick = dispatchSelected;
-        $("#clearBtn").onclick = () => {
-          selectIncident(null);
-          state.paused = false;
-          $("#pauseBtn").textContent = "⏸️ Pause";
-        };
-        $("#fillReqBtn").onclick = () => {
-          const inc = state.incidents.find((i) => i.id === state.selectedId);
-          if (!inc) return;
-          $("#sendCount").value = Math.min(inc.required, state.officersFree);
-        };
-        $("#maxBtn").onclick = () => {
-          $("#sendCount").value = state.officersFree;
-        };
-        $("#spawnBtn").onclick = spawnIncident;
-        $("#pauseBtn").onclick = () => {
-          state.paused = !state.paused;
-          $("#pauseBtn").textContent = state.paused ? "▶️ Resume" : "⏸️ Pause";
-        };
-        document.querySelectorAll("[data-speed]").forEach((btn) =>
-          btn.addEventListener("click", () => {
-            state.speed = Number(btn.dataset.speed || 1);
-            state.paused = false;
-            $("#pauseBtn").textContent = "⏸️ Pause";
-          })
+        ratePerHour *= Math.max(
+          0.25,
+          1 - incidents.length * SPAWN.nearCapScalePerIncident
         );
 
-        // Patrols
-        $("#addPatrolBtn").onclick = addPatrol;
+        const nowMin = simNowMin();
+        const inBurst = nowMin < SPAWN_STATE.burstUntilSimMin;
+        const inLull = nowMin < SPAWN_STATE.lullUntilSimMin;
 
-        // Shop
-        const shop = $("#shopOverlay");
-        function openShop() {
-          // pause but keep background visible (no blur)
-          state.paused = true;
-          $("#pauseBtn").textContent = "▶️ Resume";
-          $("#shopMoney").textContent = state.money.toFixed(0);
-          $("#shopOfficers").textContent = state.officersTotal;
-          $("#shopDay").textContent = state.day;
-          shop.classList.add("show");
+        if (!inBurst && !inLull) {
+          if (Math.random() < SPAWN.burstStartByHour[h]) {
+            const dur = rand(SPAWN.burstDurMin, SPAWN.burstDurMax);
+            SPAWN_STATE.burstUntilSimMin = nowMin + dur;
+            log(`🔥 Burst started for ~${dur.toFixed(1)} sim min`, "#ffd59e");
+          } else if (Math.random() < SPAWN.lullChance) {
+            const dur = rand(SPAWN.lullDurMin, SPAWN.lullDurMax);
+            SPAWN_STATE.lullUntilSimMin = nowMin + dur;
+            log(`🌙 Quiet lull for ~${dur.toFixed(1)} sim min`, "#a7b5d7");
+          }
         }
-        function closeShop() {
-          shop.classList.remove("show");
-        }
-        $("#shopBtn").onclick = openShop;
-        $("#closeShop").onclick = closeShop;
 
-        // Hire in shop – fixed so it always updates game state
-        $("#hireBtn").onclick = () => {
-          const c = Math.max(1, Math.floor(Number($("#hireCount").value || 1)));
-          const cost = 150 * c;
-          const msg = $("#hireMsg");
-          if (state.money < cost) {
-            msg.textContent = "Not enough money.";
+        let rateMult = 1.0;
+        if (nowMin < SPAWN_STATE.burstUntilSimMin) rateMult *= SPAWN.burstMult;
+        if (nowMin < SPAWN_STATE.lullUntilSimMin) rateMult *= SPAWN.lullMult;
+        ratePerHour *= rateMult;
+
+        const lambdaPerSimMin = Math.max(0.02, ratePerHour / 60);
+        let waitSimMin = -Math.log(1 - Math.random()) / lambdaPerSimMin;
+
+        const sinceLast = nowMin - SPAWN_STATE.lastSpawnSimMin;
+        const needMore = Math.max(0, SPAWN.minGapSimMin - sinceLast);
+        waitSimMin = Math.max(waitSimMin, needMore);
+
+        const j = SPAWN.jitter;
+        waitSimMin *= rand(1 - j, 1 + j);
+        const waitRealMs = Math.max(
+          350,
+          (waitSimMin * 60 * 1000) / Math.max(0.001, simPerReal())
+        );
+
+        setTimeout(() => {
+          if (GAME.paused) {
+            setTimeout(scheduleNextSpawn, 400);
             return;
           }
-          state.money -= cost;
-          state.officersTotal += c;
-          state.officersFree += c;
-          msg.textContent = `Hired ${c} officer(s) for $${cost}.`;
-          $("#shopMoney").textContent = state.money.toFixed(0);
-          $("#shopOfficers").textContent = state.officersTotal;
-          renderHUD();
-          log(`👮 Hired ${c} officer(s) for $${cost}.`);
+          if (incidents.length < dynamicMaxActive()) {
+            spawnIncident();
+            SPAWN_STATE.lastSpawnSimMin = simNowMin();
+          }
+          scheduleNextSpawn();
+        }, waitRealMs);
+      }
+
+      /* Call text & UI */
+      const callerNames = [
+        "Unknown",
+        "Dalton",
+        "Manager",
+        "Store Clerk",
+        "Bus Driver",
+        "Security Guard",
+        "Neighbor",
+      ];
+      const types = [
+        { t: "Noise Complaint", short: "Loud argument reported.", sev: 1 },
+        { t: "Shoplifting", short: "Teenager ran out with items.", sev: 1 },
+        { t: "Suspicious Person", short: "Loitering near entrance.", sev: 1 },
+        { t: "Traffic Accident", short: "Two vehicles, no injuries.", sev: 2 },
+        {
+          t: "Fight in Progress",
+          short: "Multiple individuals involved.",
+          sev: 2,
+        },
+        {
+          t: "Burglary Alarm",
+          short: "Motion detected at back door of bank.",
+          sev: 2,
+        },
+        { t: "Armed Robbery", short: "Suspect may be armed.", sev: 3 },
+        { t: "Vehicle Pursuit", short: "Reckless driver fleeing.", sev: 3 },
+        { t: "Large Disturbance", short: "Crowd forming; escalating.", sev: 3 },
+        {
+          t: "Critical Incident",
+          short: "Multiple reports; extremely dangerous.",
+          sev: 4,
+        },
+      ];
+      const streetsA = [
+        "Maple",
+        "Oak",
+        "Cedar",
+        "Pine",
+        "River",
+        "Liberty",
+        "Summit",
+        "Prospect",
+        "Broad",
+      ];
+      const streetsB = ["Ave", "St", "Rd", "Blvd", "Way", "Ln", "Dr"];
+      function randPick(a) {
+        return a[Math.floor(Math.random() * a.length)];
+      }
+      function streetName() {
+        return `${randPick(streetsA)} ${randPick(streetsB)}`;
+      }
+
+      const callListEl = document.getElementById("callList");
+      function createCallForIncident(inc) {
+        const call = { id: nextCallId++, incidentId: inc.id, el: null };
+        calls.push(call);
+        const desc =
+          types.find((t) => t.sev === inc.severity) || randPick(types);
+        const loc = streetName();
+        const caller = randPick(callerNames);
+        const card = document.createElement("div");
+        card.className = "call";
+        card.dataset.callId = call.id;
+        const sevClass =
+          inc.severity === 1
+            ? "sev1"
+            : inc.severity === 2
+            ? "sev2"
+            : inc.severity === 3
+            ? "sev3"
+            : "sev4";
+        card.innerHTML = `
+          <div class="callHeader">
+            <span class="badge ${sevClass}">Sev ${inc.severity}</span>
+            <span class="badge">#${inc.id}</span>
+          </div>
+          <h3 class="callTitle">Incoming call – ${desc.t}</h3>
+          <p class="callDesc">Caller: <strong>${caller}</strong><br/>Location: <strong>${loc}</strong><br/>"${
+          inc.revealed ? `Confirmed severity ${inc.severity}` : desc.short
+        }"</p>
+          <div class="callActions">
+            <button class="btn view">View</button>
+            <button class="btn accept">Quick Send</button>
+          </div>`;
+        card.querySelector(".view").onclick = () => {
+          highlightPing = {
+            nodeId: inc.nodeId,
+            until: nowMs() + 1800 / Math.max(0.001, SPEED.mult),
+          };
+          log(`📍 Viewing #${inc.id} (sev ${inc.severity})`, `#b6d3ff`);
+          pauseGame();
         };
+        card.querySelector(".accept").onclick = () => {
+          quickSendRecommended(inc);
+        };
+        callListEl.prepend(card);
+        call.el = card;
+      }
+      function removeCallByIncident(id) {
+        const c = calls.find((x) => x.incidentId === id);
+        if (!c) return;
+        if (c.el && c.el.parentNode) c.el.parentNode.removeChild(c.el);
+        calls.splice(calls.indexOf(c), 1);
+      }
 
-        // Drill in shop
-        $("#startDrillBtn").onclick = startDrill;
+      /* Incidents */
+      function spawnIncident(opts = {}) {
+        const nid = opts.nodeId ?? pickSpawnNode();
+        const sev = opts.severity ?? weightedSeverity();
+        const now = nowMs();
+        const inc = {
+          id: nextIncidentId++,
+          nodeId: nid,
+          severity: sev,
+          createdAt: now,
+          expiresAt: now + ttlBySeverity(sev),
+          revealed: !!opts.revealed,
+          _graceUntil: 0,
+          _drill: !!opts._drill,
+        };
+        incidents.push(inc);
+        log(
+          `🚨 New incident #${inc.id} (sev ${sev})`,
+          sev === 4 ? "#ff9b9b" : "#ffb3b3"
+        );
+        createCallForIncident(inc);
 
-        // Clicking an incident also selects it
-        elIncidents.addEventListener("click", (e) => {
-          const card = e.target.closest(".incident");
-          if (!card) return;
-          selectIncident(Number(card.dataset.id), true);
+        // Auto-dispatch feature
+        if (GAME.autoDispatch) {
+          quickSendRecommended(inc);
+        }
+
+        if (!opts.manual && SPEED.mult > 1) {
+          setSpeed(1);
+          log(
+            "⏱️ Incident spawned while fast-forwarding → speed reset to 1×.",
+            "#ffd59e"
+          );
+        }
+        if (!opts.manual) scheduleNextSpawn();
+      }
+
+      /* Pathfinding */
+      function shortestPath(src, dst) {
+        const N = nodes.length,
+          dist = new Array(N).fill(Infinity),
+          prev = new Array(N).fill(-1),
+          vis = new Array(N).fill(false);
+        dist[src] = 0;
+        for (let k = 0; k < N; k++) {
+          let u = -1,
+            best = Infinity;
+          for (let i = 0; i < N; i++)
+            if (!vis[i] && dist[i] < best) {
+              best = dist[i];
+              u = i;
+            }
+          if (u === -1) break;
+          vis[u] = true;
+          if (u === dst) break;
+          for (const { to, w } of adj.get(u) || []) {
+            const nd = dist[u] + w;
+            if (nd < dist[to]) {
+              dist[to] = nd;
+              prev[to] = u;
+            }
+          }
+        }
+        if (dist[dst] === Infinity) return null;
+        const out = [];
+        for (let cur = dst; cur !== -1; cur = prev[cur]) out.push(cur);
+        out.reverse();
+        return out;
+      }
+
+      /* Dispatch popup */
+      const popup = document.getElementById("dispatchPopup");
+      const dpIncidentId = document.getElementById("dpIncidentId");
+      const dpSev = document.getElementById("dpSev");
+      const dpRecommended = document.getElementById("dpRecommended");
+      const dpAvail = document.getElementById("dpAvail");
+      const dpCount = document.getElementById("dpCount");
+      const dpMinus = document.getElementById("dpMinus");
+      const dpPlus = document.getElementById("dpPlus");
+      const dpConfirm = document.getElementById("dpConfirm");
+      const dpQuick = document.getElementById("dpQuick");
+      const dpCancel = document.getElementById("dpCancel");
+      let popupIncident = null;
+
+      function openDispatchPopup(inc, px = null, py = null) {
+        popupIncident = inc;
+        const rec = inc.severity;
+        dpIncidentId.textContent = "#" + inc.id;
+        dpSev.textContent = inc.severity;
+        dpRecommended.textContent = rec;
+        dpAvail.textContent = officers;
+        dpCount.value = Math.min(rec, Math.max(1, officers));
+
+        // TTL grace + PAUSE
+        inc._graceUntil = Math.max(
+          inc._graceUntil,
+          nowMs() + 3000 / Math.max(0.001, SPEED.mult)
+        );
+        pauseGame();
+
+        const wrap = document.getElementById("wrap").getBoundingClientRect();
+        const p = toPx(nodes[inc.nodeId]);
+        const px2 = px ?? p.x,
+          py2 = py ?? p.y;
+        popup.style.left = `${Math.min(
+          wrap.width - 130,
+          Math.max(130, px2)
+        )}px`;
+        popup.style.top = `${Math.min(wrap.height - 60, Math.max(100, py2))}px`;
+        popup.style.display = "block";
+        setTimeout(() => dpConfirm.focus(), 0);
+      }
+      function closeDispatchPopup() {
+        popup.style.display = "none";
+        popupIncident = null;
+        resumeGame();
+      }
+
+      function quickSendRecommended(inc) {
+        const count = Math.min(officers, Math.max(1, inc.severity));
+        tryDispatch(inc, count);
+      }
+
+      dpMinus.onclick = () => {
+        dpCount.value = Math.max(1, parseInt(dpCount.value || "1") - 1);
+      };
+      dpPlus.onclick = () => {
+        dpCount.value = Math.min(officers, parseInt(dpCount.value || "1") + 1);
+      };
+      dpQuick.onclick = () => {
+        if (!popupIncident) return;
+        quickSendRecommended(popupIncident);
+        closeDispatchPopup();
+      };
+      dpCancel.onclick = () => closeDispatchPopup();
+      dpConfirm.onclick = () => {
+        if (!popupIncident) return;
+        const count = Math.min(
+          officers,
+          Math.max(1, parseInt(dpCount.value || "1"))
+        );
+        tryDispatch(popupIncident, count);
+        closeDispatchPopup();
+      };
+
+      /* Map interaction */
+      canvas.addEventListener("click", (ev) => {
+        const clickPx = { x: ev.offsetX, y: ev.offsetY };
+        if (PATROL.removeMode) {
+          const idx = findNearestPatrolIndex(clickPx.x, clickPx.y, 24);
+          if (idx != -1) {
+            const car = cars[idx];
+            cars.splice(idx, 1);
+            busy = Math.max(0, busy - 1);
+            officers += 1;
+            updateStats();
+            log("🗑️ Patrol removed. Officer returned to pool.", "#ffdfae");
+          } else {
+            log("No patrol near that click.", "#9fb1d1");
+          }
+          return;
+        }
+        const nid = pickNearestNode(ev.offsetX, ev.offsetY);
+        if (PATROL.mode) {
+          PATROL.pickNode(nid);
+          return;
+        }
+        const inc = findIncidentOnNode(nid);
+        if (!inc) {
+          log(
+            "No incident here (use a red dot or a Call’s Quick Send).",
+            "#9fb1d1"
+          );
+          return;
+        }
+        if (ev.shiftKey) {
+          quickSendRecommended(inc);
+          return;
+        }
+        openDispatchPopup(inc, ev.offsetX, ev.offsetY);
+      });
+      function pickNearestNode(px, py) {
+        const nx = px / canvas.clientWidth,
+          ny = py / canvas.clientHeight;
+        let best = -1,
+          bd = Infinity;
+        for (const n of nodes) {
+          const d = Math.hypot(n.x - nx, n.y - ny);
+          if (d < bd) {
+            bd = d;
+            best = n.id;
+          }
+        }
+        return best;
+      }
+      function findIncidentOnNode(nid) {
+        return incidents.find((i) => i.nodeId === nid);
+      }
+
+      /* Dispatch & cars */
+      function tryDispatch(inc, sendCount) {
+        if (officers < sendCount) {
+          log(`Not enough officers (avail ${officers}).`, `#ffd18f`);
+          return;
+        }
+        officers -= sendCount;
+        busy += sendCount;
+        updateStats();
+        const pathOut = shortestPath(BASE_NODE, inc.nodeId);
+        if (!pathOut) {
+          log("No path to incident!", "#ffa6a6");
+          officers += sendCount;
+          busy -= sendCount;
+          updateStats();
+          return;
+        }
+        for (let i = 0; i < sendCount; i++) {
+          const congestion = rand(stats.congestionMin, stats.congestionMax);
+          cars.push({
+            id: nextCarId++,
+            type: "response",
+            state: "to_incident",
+            path: pathOut.slice(),
+            segIndex: 0,
+            t: 0,
+            incidentId: inc.id,
+            speedPx: stats.speedPxPerSec * congestion * SPEED.mult,
+            color: i === 0 ? "#7dc3ff" : i === 1 ? "#a1e3ff" : "#cfeeff",
+            direction: "out",
+          });
+        }
+        removeCallByIncident(inc.id);
+        log(
+          `🚓 Dispatched ${sendCount} to #${inc.id} (rec ${inc.severity})`,
+          `#cfe3ff`
+        );
+      }
+      function beginReturn(car) {
+        car.state = "returning";
+        car.direction = "back";
+        const here =
+          car.path && car.path.length
+            ? car.path[car.path.length - 1]
+            : BASE_NODE;
+        car.path = shortestPath(here, BASE_NODE) || [here, BASE_NODE];
+        car.segIndex = 0;
+        car.t = 0;
+        const congestion = rand(stats.congestionMin, stats.congestionMax);
+        car.speedPx = stats.speedPxPerSec * congestion * SPEED.mult;
+      }
+
+      /* Incident lifecycle & resolution */
+      function updateIncidents(now) {
+        for (let i = incidents.length - 1; i >= 0; i--) {
+          const inc = incidents[i];
+          const ttlLeft = inc.expiresAt - now;
+          const inGrace = now < (inc._graceUntil || 0);
+          if (ttlLeft <= 0 && !inGrace) {
+            log(`⚠️ Missed #${inc.id} (-5 rep)`, `#ffcc88`);
+            reputation = Math.max(0, reputation - 5);
+            removeCallByIncident(inc.id);
+            incidents.splice(i, 1);
+            updateStats();
+          }
+        }
+      }
+
+      const SUCCESS = {
+        base: 0.2,
+        ratioW: 0.35,
+        travelW: 0.2,
+        idleMax: 0.1,
+        patrolBoost: 0.1,
+        min: 0.12,
+        max: 0.9,
+      };
+
+      function updateCars(dt) {
+        for (const car of cars) {
+          const segTo = nodes[car.path[car.segIndex + 1]];
+          if (!segTo) {
+            if (car.state === "to_incident") {
+              const inc = incidents.find((i) => i.id === car.incidentId);
+              if (!inc) {
+                if (car.type === "response") beginReturn(car);
+                else if (car.type === "patrol") {
+                  car.state = "returning";
+                  car.direction = "back";
+                  car.path = car._pathBack.slice();
+                  car.segIndex = 0;
+                  car.t = 0;
+                }
+                continue;
+              }
+              car.state = "resolving";
+              car.resolveUntil =
+                nowMs() +
+                stats.resolveMsBySeverity[inc.severity] /
+                  Math.max(0.001, SPEED.mult);
+              if (!inc._claimed) {
+                inc._claimed = true;
+
+                const travelSeconds = (nowMs() - inc.createdAt) / 1000;
+                const responders = cars.filter(
+                  (c) =>
+                    c.incidentId === inc.id &&
+                    (c.state === "to_incident" ||
+                      c.state === "resolving" ||
+                      c.state === "returning")
+                );
+                const sent = responders.length;
+                const ratio = Math.min(1, sent / inc.severity);
+                const patrolBoost = PATROL.anyNear(inc.nodeId)
+                  ? SUCCESS.patrolBoost
+                  : 0.0;
+                const travelPenalty = Math.max(0, 1 - travelSeconds / 30);
+                const idleBoost = Math.min(
+                  SUCCESS.idleMax,
+                  Math.max(0, officers * 0.02)
+                );
+                const raw =
+                  SUCCESS.base +
+                  SUCCESS.ratioW * ratio +
+                  SUCCESS.travelW * travelPenalty +
+                  idleBoost +
+                  patrolBoost;
+                const successChance = clamp(raw, SUCCESS.min, SUCCESS.max);
+
+                // Debug: success components
+                console.log({
+                  incidentId: inc.id,
+                  severity: inc.severity,
+                  sent,
+                  modifiers: { ratio, patrolBoost, travelPenalty, idleBoost },
+                  rawChance: +(raw * 100).toFixed(1) + "%",
+                  finalChance: +(successChance * 100).toFixed(1) + "%",
+                });
+
+                // Remove incident + card
+                const idx = incidents.findIndex((x) => x.id === inc.id);
+                if (idx > -1) incidents.splice(idx, 1);
+                removeCallByIncident(inc.id);
+
+                if (Math.random() < successChance) {
+                  let pay = stats.payoutBySeverity[inc.severity];
+                  if (inc._drill) pay = Math.floor(pay * 0.35); // drills pay less
+                  funds += pay;
+                  reputation = Math.min(200, reputation + 1);
+                  level = 1 + Math.floor((reputation - 80) / 20);
+                  log(`✅ Resolved #${inc.id} (+$${pay})`, "#b5ffb5");
+                } else {
+                  const pen = stats.failPenaltyBySeverity[inc.severity] || 5;
+                  reputation = Math.max(0, reputation - pen);
+                  log(
+                    `❌ Resolution failed for #${inc.id} (-${pen} rep)`,
+                    "#ff9ea1"
+                  );
+                }
+
+                // Casualties
+                const baseCas =
+                  [0, 0.003, 0.012, 0.05, 0.09][inc.severity] || 0.01;
+                const undersend = sent > 0 ? inc.severity / sent : 3;
+                const riskMult = Math.min(3.5, Math.pow(undersend, 1.4));
+                const deathP = clamp(
+                  baseCas * riskMult,
+                  0.001,
+                  inc.severity >= 4
+                    ? 0.28
+                    : inc.severity === 3
+                    ? 0.22
+                    : inc.severity === 2
+                    ? 0.12
+                    : 0.04
+                );
+
+                for (const r of responders) {
+                  if (Math.random() < deathP) {
+                    if (r.type === "response" && r.state !== "done") {
+                      busy = Math.max(0, busy - 1);
+                    }
+                    if (r.type === "response") {
+                      kia += 1;
+                      r.state = "done";
+                    }
+                  } else {
+                    if (
+                      r.type === "response" &&
+                      r.state !== "returning" &&
+                      r.state !== "done"
+                    )
+                      beginReturn(r);
+                  }
+                }
+                updateStats();
+              } else {
+                beginReturn(car);
+              }
+            } else if (car.state === "returning") {
+              car.state = "done";
+              if (car.type === "response") {
+                busy = Math.max(0, busy - 1);
+                officers += 1;
+                updateStats();
+              } else if (car.type === "patrol") {
+                car.state = "to_incident";
+                car.direction = "out";
+                car.path = car._pathOut.slice();
+                car.segIndex = 0;
+                car.t = 0;
+              }
+            }
+            continue;
+          }
+
+          if (car.state === "to_incident" || car.state === "returning") {
+            const segFrom = nodes[car.path[car.segIndex]];
+            const A = toPx(segFrom),
+              B = toPx(segTo);
+            const len = Math.hypot(B.x - A.x, B.y - A.y);
+            const segTime = len / car.speedPx;
+            car.t += dt / segTime;
+            if (car.t >= 1) {
+              car.segIndex++;
+              car.t = 0;
+            }
+          } else if (car.state === "resolving") {
+            if (nowMs() >= car.resolveUntil) {
+              if (car.type === "response") beginReturn(car);
+              else {
+                car.state = "to_incident";
+                car.direction = "out";
+                car.segIndex = 0;
+                car.t = 0;
+              }
+            }
+          }
+        }
+        for (let i = cars.length - 1; i >= 0; i--)
+          if (cars[i].state === "done") cars.splice(i, 1);
+      }
+
+      /* Patrol system */
+      const PATROL = {
+        mode: false,
+        removeMode: false,
+        pending: null,
+        radiusPx: 70,
+        toggle() {
+          this.mode = !this.mode;
+          if (this.mode) this.removeMode = false;
+          document.getElementById("patrolModeBtn").textContent = this.mode
+            ? "🚶 Patrol: On"
+            : "🚶 Patrol: Off";
+          document.getElementById("removePatrolBtn").textContent =
+            "🗑️ Remove Patrol: Off";
+          document.getElementById("hint").style.display =
+            this.mode || this.removeMode ? "block" : "none";
+        },
+        toggleRemove() {
+          this.removeMode = !this.removeMode;
+          if (this.removeMode) this.mode = false;
+          document.getElementById("removePatrolBtn").textContent = this
+            .removeMode
+            ? "🗑️ Remove Patrol: On"
+            : "🗑️ Remove Patrol: Off";
+          document.getElementById("patrolModeBtn").textContent =
+            "🚶 Patrol: Off";
+          document.getElementById("hint").style.display =
+            this.mode || this.removeMode ? "block" : "none";
+        },
+        pickNode(nid) {
+          if (this.pending === null) {
+            this.pending = nid;
+            log("Patrol start set. Choose destination.", "#a9c4ff");
+          } else {
+            if (officers <= 0) {
+              log("❌ No available officers to deploy a patrol.", "#ffb3b3");
+              this.pending = null;
+              this.mode = false;
+              document.getElementById("patrolModeBtn").textContent =
+                "🚶 Patrol: Off";
+              document.getElementById("hint").style.display = "none";
+              return;
+            }
+            officers -= 1;
+            busy += 1;
+            updateStats();
+            const start = this.pending,
+              end = nid;
+            this.pending = null;
+            const out = shortestPath(start, end);
+            if (!out) {
+              log("No patrol path found.", "#ffa6a6");
+              officers += 1;
+              busy = Math.max(0, busy - 1);
+              updateStats();
+              return;
+            }
+            const back = shortestPath(end, start) || out.slice().reverse();
+            const congestion = rand(0.88, 0.98);
+            const car = {
+              id: nextCarId++,
+              type: "patrol",
+              state: "to_incident",
+              path: out.slice(),
+              _pathOut: out.slice(),
+              _pathBack: back.slice(),
+              segIndex: 0,
+              t: 0,
+              incidentId: -1,
+              speedPx: stats.speedPxPerSec * 0.8 * congestion * SPEED.mult,
+              color: "#7fffaf",
+              direction: "out",
+            };
+            cars.push(car);
+            log(
+              "👮 Patrol deployed (consumed 1 officer). Nearby incidents gain +10% success.",
+              "#b6ffcc"
+            );
+            this.mode = false;
+            document.getElementById("patrolModeBtn").textContent =
+              "🚶 Patrol: Off";
+            document.getElementById("hint").style.display = "none";
+          }
+        },
+        anyNear(nodeId) {
+          const p = toPx(nodes[nodeId]);
+          for (const c of cars) {
+            if (c.type !== "patrol") continue;
+            const pos = carPosition(c);
+            if (Math.hypot(pos.x - p.x, pos.y - p.y) <= this.radiusPx)
+              return true;
+          }
+          return false;
+        },
+      };
+
+      /* Intel & Drill */
+      let intelCDUntil = 0;
+      function intelSweep() {
+        const now = nowMs();
+        if (now < intelCDUntil) {
+          const secs = Math.ceil((intelCDUntil - now) / 1000);
+          log(`🛰️ Intel on cooldown (${secs}s)`, "#cfd9ff");
+          return;
+        }
+        intelCDUntil = now + 90000;
+        for (const inc of incidents) {
+          inc.revealed = true;
+          inc.expiresAt += 3000;
+        }
+        for (const c of calls) {
+          const inc = incidents.find((i) => i.id === c.incidentId);
+          if (!inc || !c.el) continue;
+          const descEl = c.el.querySelector(".callDesc");
+          if (descEl)
+            descEl.innerHTML = descEl.innerHTML.replace(
+              /".*"/,
+              `"Confirmed severity ${inc.severity}"`
+            );
+        }
+        log("🛰️ Intel Sweep: severities confirmed & TTLs extended.", "#dfe8ff");
+      }
+      function spawnDrill() {
+        const nid = pickSpawnNode();
+        const sev = 1;
+        spawnIncident({
+          nodeId: nid,
+          severity: sev,
+          revealed: true,
+          manual: true,
+          _drill: true,
         });
+        const inc = incidents[incidents.length - 1];
+        inc.expiresAt += 15000;
+        log(
+          "🎯 Drill call spawned (no rep penalty, reduced payout).",
+          "#e8f7b5"
+        );
+      }
 
-        // ---------- START ----------
-        renderHUD();
-        spawnIncident();
-        spawnIncident();
-        renderPatrols();
-        loop();
-      })();
+      /* Render */
+      function draw() {
+        ctx.fillStyle = "#0b0e14";
+        ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+        drawBackdrop();
+
+        ctx.lineWidth = 6;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "#273142";
+        ctx.beginPath();
+        for (const [a, b] of edges) {
+          const A = toPx(nodes[a]),
+            B = toPx(nodes[b]);
+          ctx.moveTo(A.x, A.y);
+          ctx.lineTo(B.x, B.y);
+        }
+        ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#3a4a66";
+        ctx.beginPath();
+        for (const [a, b] of edges) {
+          const A = toPx(nodes[a]),
+            B = toPx(nodes[b]);
+          ctx.moveTo(A.x, A.y);
+          ctx.lineTo(B.x, B.y);
+        }
+        ctx.stroke();
+
+        const base = toPx(nodes[BASE_NODE]);
+        ctx.fillStyle = "#73a9ff";
+        ctx.strokeStyle = "#b6d3ff";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(base.x - 9, base.y - 9, 18, 18, 3);
+        else {
+          ctx.rect(base.x - 9, base.y - 9, 18, 18);
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        // Patrol influence zones
+        ctx.save();
+        ctx.globalAlpha = 0.08;
+        ctx.fillStyle = "#7fffaf";
+        for (const c of cars) {
+          if (c.type !== "patrol") continue;
+          const pos = carPosition(c);
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, PATROL.radiusPx, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        // Incidents
+        for (const inc of incidents) {
+          const p = toPx(nodes[inc.nodeId]);
+          const r = 8 + inc.severity * 2;
+          ctx.beginPath();
+          ctx.fillStyle = [
+            ,
+            "rgba(255,90,90,.9)",
+            "rgba(255,120,80,.95)",
+            "rgba(255,60,60,1)",
+            "rgba(255,40,40,1)",
+          ][inc.severity];
+          ctx.shadowColor = "rgba(255,70,70,.6)";
+          ctx.shadowBlur = 10;
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          const ttl = Math.max(
+            0,
+            inc.expiresAt - Math.max(nowMs(), inc._graceUntil || 0)
+          );
+          const full = ttlBySeverity(inc.severity);
+          const frac = Math.min(1, ttl / full);
+          ctx.strokeStyle = "#ffd5d5";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(
+            p.x,
+            p.y,
+            r + 4,
+            -Math.PI / 2,
+            -Math.PI / 2 + Math.PI * 2 * frac
+          );
+          ctx.stroke();
+        }
+
+        if (highlightPing && nowMs() < highlightPing.until) {
+          const p = toPx(nodes[highlightPing.nodeId]);
+          const t =
+            (highlightPing.until - nowMs()) /
+            (1800 / Math.max(0.001, SPEED.mult));
+          const rr = 28 + (1 - t) * 12;
+          ctx.strokeStyle = "rgba(140,200,255,.9)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, rr, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          highlightPing = null;
+        }
+
+        // Cars
+        for (const car of cars) {
+          const pos = carPosition(car);
+          drawCar(pos.x, pos.y, car.color, car.direction);
+        }
+      }
+      function drawBackdrop() {
+        const w = canvas.clientWidth,
+          h = canvas.clientHeight;
+        const g = ctx.createRadialGradient(
+          w * 0.5,
+          h * 0.5,
+          10,
+          w * 0.5,
+          h * 0.5,
+          Math.max(w, h) * 0.7
+        );
+        g.addColorStop(0, "#0b0e14");
+        g.addColorStop(1, "#0a0c12");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = "#121722";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let x = 0; x < w; x += 40) {
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h);
+        }
+        for (let y = 0; y < h; y += 40) {
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+        }
+        ctx.stroke();
+      }
+      function carPosition(car) {
+        const a = nodes[car.path[car.segIndex]],
+          b = nodes[car.path[car.segIndex + 1]] || a;
+        const A = toPx(a),
+          B = toPx(b);
+        return { x: A.x + (B.x - A.x) * car.t, y: A.y + (B.y - A.y) * car.t };
+      }
+      function drawCar(x, y, color, dir) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.fillStyle = color;
+        ctx.strokeStyle = "#0b0e14";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(-7, -5, 14, 10, 2);
+        else ctx.rect(-7, -5, 14, 10);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = dir === "out" ? "#8ee6ff" : "#7fffaf";
+        ctx.beginPath();
+        ctx.arc(0, 0, 2.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      /* Utils & economy */
+      function toPx(n) {
+        return { x: n.x * canvas.clientWidth, y: n.y * canvas.clientHeight };
+      }
+      function rand(a, b) {
+        return a + Math.random() * (b - a);
+      }
+      function clamp(v, a, b) {
+        return Math.max(a, Math.min(b, v));
+      }
+      function salariedCount() {
+        return Math.max(0, officers - ECON.baseFreeOfficers);
+      }
+
+      function doPayrollIfNeeded() {
+        const day = Math.floor(simNowDays()) + 1;
+        if (day !== lastDayShown) {
+          document.getElementById("day").textContent = day;
+          log(
+            `🗓️ Day ${day} summary — Officers: ${officers} (busy ${busy}), Rep: ${reputation}, Funds: $${funds.toFixed(
+              0
+            )}, KIA: ${kia}`,
+            "#c6d7ff"
+          );
+          lastDayShown = day;
+        }
+        if (day - 1 > lastPayrollDay) {
+          const salaried = salariedCount();
+          const costEach = ECON.salaryPerOfficerPerDay;
+          const totalCost = salaried * costEach;
+          if (salaried > 0) {
+            if (funds >= totalCost) {
+              funds -= totalCost;
+              log(
+                `🧾 Payroll: -$${totalCost} for ${salaried} salaried officer(s).`,
+                "#ffd9b0"
+              );
+            } else {
+              const affordable = Math.floor(funds / costEach);
+              const payAmt = Math.max(0, affordable * costEach);
+              if (payAmt > 0) {
+                funds -= payAmt;
+                log(
+                  `🧾 Partial payroll: -$${payAmt} (paid ${affordable}/${salaried}).`,
+                  "#ffd9b0"
+                );
+              }
+              const quitCount = Math.max(0, salaried - affordable);
+              if (quitCount > 0) {
+                const before = officers;
+                officers = Math.max(busy, officers - quitCount);
+                const actualQuit = Math.max(0, before - officers);
+                log(
+                  `🚪 ${actualQuit} officer(s) quit due to unpaid salary.`,
+                  "#ffb3b3"
+                );
+              }
+            }
+            updateStats();
+          }
+          lastPayrollDay = day - 1;
+        }
+      }
+
+      function doGrantIfDue() {
+        const day = Math.floor(simNowDays());
+        if (day >= nextGrantDay) {
+          funds += ECON.grantAmount;
+          log(`🏛️ City grant received: +$${ECON.grantAmount}`, "#c9ffbf");
+          updateStats();
+          nextGrantDay += ECON.grantEveryDays;
+        }
+      }
+
+      function updateShopUI() {
+        document.getElementById("freeSlots").textContent = Math.max(
+          0,
+          ECON.baseFreeOfficers - Math.min(officers, ECON.baseFreeOfficers)
+        );
+        document.getElementById("freeBaseOut").textContent =
+          ECON.baseFreeOfficers;
+        document.getElementById("hireCostOut").textContent = ECON.hireCost;
+        document.getElementById("salaryOut").textContent =
+          ECON.salaryPerOfficerPerDay;
+        document.getElementById("grantDaysOut").textContent =
+          ECON.grantEveryDays;
+        document.getElementById("grantAmtOut").textContent = ECON.grantAmount;
+      }
+      function updateStats() {
+        document.getElementById("level").textContent = level;
+        document.getElementById("officers").textContent = officers;
+        document.getElementById("busy").textContent = busy;
+        const kiaEl = document.getElementById("kia");
+        if (kiaEl) kiaEl.textContent = kia;
+        document.getElementById("rep").textContent = reputation;
+        document.getElementById("funds").textContent = funds.toFixed(0);
+        document.getElementById("clock").textContent = fmtClock();
+      }
+
+      /* Frame loop */
+      let last = nowMs();
+      function frame() {
+        const now = nowMs();
+        const dt = (now - last) / 1000;
+        last = now;
+
+        if (!GAME.paused) {
+          doPayrollIfNeeded();
+          doGrantIfDue();
+          updateIncidents(now);
+          updateCars(dt);
+          checkWinLose();
+        }
+
+        draw();
+        updateStats();
+        requestAnimationFrame(frame);
+      }
+
+      /* Speed + keyboard shortcuts */
+      const speedSeg = document.getElementById("speedSeg");
+      function setSpeed(v) {
+        SPEED.mult = v;
+        for (const b of speedSeg.querySelectorAll("button"))
+          b.classList.toggle("active", parseFloat(b.dataset.speed) === v);
+        for (const c of cars) {
+          if (c.type === "response" || c.type === "patrol") {
+            const base =
+              c.type === "patrol"
+                ? stats.speedPxPerSec * 0.8
+                : stats.speedPxPerSec;
+            c.speedPx =
+              base *
+              rand(stats.congestionMin, stats.congestionMax) *
+              SPEED.mult;
+          }
+        }
+        SPAWN_STATE.burstUntilSimMin = Math.min(
+          SPAWN_STATE.burstUntilSimMin,
+          simNowMin() + 0.6
+        );
+        SPAWN_STATE.lullUntilSimMin = Math.min(
+          SPAWN_STATE.lullUntilSimMin,
+          simNowMin() + 0.6
+        );
+        log(`⏩ Speed set to ${SPEED.mult}×`, "#cfe3ff");
+      }
+      speedSeg.addEventListener("click", (e) => {
+        if (e.target.tagName !== "BUTTON") return;
+        setSpeed(parseFloat(e.target.dataset.speed) || 1);
+      });
+
+      // Keyboard controls
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "1") setSpeed(1);
+        if (e.key === "2") setSpeed(2);
+        if (e.key === "4") setSpeed(4);
+        if (e.key.toLowerCase() === "p") {
+          GAME.paused ? resumeGame() : pauseGame();
+        }
+        if (e.key === "Escape") {
+          if (popup.style.display !== "none") closeDispatchPopup();
+          else if (GAME.paused) closeShop();
+        }
+        if (e.key.toLowerCase() === "q" && popup.style.display !== "none") {
+          dpQuick.click();
+        }
+      });
+
+      document.getElementById("patrolModeBtn").onclick = () => PATROL.toggle();
+      document.getElementById("removePatrolBtn").onclick = () =>
+        PATROL.toggleRemove();
+      document.getElementById("drillBtn").onclick = () => spawnDrill();
+      document.getElementById("intelBtn").onclick = () => intelSweep();
+
+      /* Shop (FIXED HIRE BUTTON + saving UI) */
+      const shopOverlay = document.getElementById("shopOverlay");
+      document.getElementById("shopBtn").onclick = openShop;
+      document.getElementById("shopClose").onclick = closeShop;
+      function openShop() {
+        if (GAME.paused) return;
+        pauseGame();
+        shopOverlay.style.display = "flex";
+        updateShopUI();
+      }
+      function closeShop() {
+        if (!GAME.paused) return;
+        shopOverlay.style.display = "none";
+        resumeGame();
+      }
+
+      // >>> FIX: Wire up the Hire Officer button
+      document.getElementById("hire1").onclick = () => {
+        if (funds < ECON.hireCost) {
+          log(
+            `❌ Not enough funds to hire (need $${ECON.hireCost}).`,
+            "#ffb2b2"
+          );
+          return;
+        }
+        funds -= ECON.hireCost;
+        officers += 1;
+        updateStats();
+        updateShopUI();
+        log(
+          "✅ Hired 1 officer. Remember: daily salary applies beyond your 3 free roster slots.",
+          "#b6ffcc"
+        );
+        saveGame();
+      };
+
+      /* Patrol helpers */
+      function findNearestPatrolIndex(px, py, maxDistPx = 24) {
+        let best = -1,
+          bd = Infinity;
+        for (let i = 0; i < cars.length; i++) {
+          const c = cars[i];
+          if (c.type !== "patrol") continue;
+          const pos = carPosition(c);
+          const d = Math.hypot(pos.x - px, pos.y - py);
+          if (d < bd) {
+            bd = d;
+            best = i;
+          }
+        }
+        return bd <= maxDistPx ? best : -1;
+      }
+
+      /* Win / Lose conditions */
+      const loseOverlay = document.getElementById("loseOverlay");
+      const winOverlay = document.getElementById("winOverlay");
+      document.getElementById("restartLose").onclick = resetGame;
+      document.getElementById("restartWin").onclick = resetGame;
+      document.getElementById("continueLose").onclick = () =>
+        (loseOverlay.style.display = "none");
+      document.getElementById("continueWin").onclick = () =>
+        (winOverlay.style.display = "none");
+
+      function checkWinLose() {
+        if (reputation <= 0) {
+          showLose();
+        }
+        const day = Math.floor(simNowDays()) + 1;
+        if (day >= 7 && reputation >= 180) {
+          showWin();
+        }
+      }
+      function showLose() {
+        pauseGame();
+        loseOverlay.style.display = "flex";
+        log("📉 Administration ended due to reputation collapse.", "#ffb2b2");
+        saveGame();
+      }
+      function showWin() {
+        pauseGame();
+        winOverlay.style.display = "flex";
+        log("🏆 City stabilized. Council extends your mandate.", "#d2ffd2");
+        saveGame();
+      }
+
+      function resetGame() {
+        // Keep difficulty but wipe state
+        level = 1;
+        officers = 4;
+        busy = 0;
+        reputation = 100;
+        funds = 150;
+        kia = 0;
+        incidents.length = 0;
+        cars.length = 0;
+        calls.length = 0;
+        nextIncidentId = 1;
+        nextCarId = 1;
+        nextCallId = 1;
+        CLOCK.start = nowMs();
+        lastPayrollDay = 0;
+        nextGrantDay = ECON.grantEveryDays;
+        lastDayShown = 1;
+        loseOverlay.style.display = "none";
+        winOverlay.style.display = "none";
+        document.getElementById("day").textContent = 1;
+        log("🔄 New run started.", "#cfe3ff");
+        scheduleNextSpawn();
+        saveGame();
+        if (GAME.paused) resumeGame();
+      }
+
+      /* Auto-dispatch toggle */
+      const autoBtn = document.getElementById("autoBtn");
+      autoBtn.onclick = () => {
+        GAME.autoDispatch = !GAME.autoDispatch;
+        autoBtn.textContent = GAME.autoDispatch
+          ? "⚡ Auto-Dispatch: On"
+          : "⚡ Auto-Dispatch: Off";
+        log(
+          `Auto-Dispatch ${GAME.autoDispatch ? "enabled" : "disabled"}.`,
+          "#cfe3ff"
+        );
+      };
+
+      /* Save / Load */
+      function saveGame() {
+        const data = {
+          v: 1,
+          level,
+          officers,
+          busy,
+          reputation,
+          funds,
+          kia,
+          paused: GAME.paused,
+          tStart: CLOCK.start,
+          totalPaused: GAME.totalPaused,
+          lastPayrollDay,
+          nextGrantDay,
+          lastDayShown,
+          SPEEDmult: SPEED.mult,
+          auto: GAME.autoDispatch,
+        };
+        try {
+          localStorage.setItem("priorityOneSave", JSON.stringify(data));
+        } catch {}
+      }
+      function loadGame() {
+        try {
+          const raw = localStorage.getItem("priorityOneSave");
+          if (!raw) return false;
+          const d = JSON.parse(raw);
+          if (!d || d.v !== 1) return false;
+          level = d.level;
+          officers = d.officers;
+          busy = d.busy;
+          reputation = d.reputation;
+          funds = d.funds;
+          kia = d.kia;
+          GAME.totalPaused = d.totalPaused || 0;
+          lastPayrollDay = d.lastPayrollDay || 0;
+          nextGrantDay = d.nextGrantDay || ECON.grantEveryDays;
+          lastDayShown = d.lastDayShown || 1;
+          SPEED.mult = d.SPEEDmult || 1;
+          GAME.autoDispatch = !!d.auto;
+          document.getElementById("autoBtn").textContent = GAME.autoDispatch
+            ? "⚡ Auto-Dispatch: On"
+            : "⚡ Auto-Dispatch: Off";
+          log("💾 Save loaded.", "#cfe3ff");
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      // autosave every ~10s
+      setInterval(saveGame, 10000);
+
+      /* Startup */
+      if (!loadGame()) {
+        log(
+          "🎖️ Welcome to Priority One. Keep the city stable for 7 days to win.",
+          "#cfe3ff"
+        );
+      }
+      updateStats();
+      scheduleNextSpawn();
+      setTimeout(() => spawnIncident({ manual: true }), 900);
+      setTimeout(() => spawnIncident({ manual: true }), 2200);
+      requestAnimationFrame(frame);
     </script>
   </body>
 </html>
